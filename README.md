@@ -3,3 +3,4 @@ Team members:
 Sabrina Liu (sl2222)
 Kathleen Chen (kc994)
 Xueqing Tsang (xt73)
+Cici Zhou (mz546)
