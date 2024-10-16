@@ -1,1 +1,3 @@
-"" "\nImplementation of Trie Trees, due 11/5.\n" ""
+(* Implementation of Trie Trees, due 11/5.*)
+
+let _ = print_endline "hi"
