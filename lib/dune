@@ -1,2 +1,3 @@
 (library
- (name group_proj))
+ (name group_proj)
+ (libraries str))
