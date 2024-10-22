@@ -1,9 +1,5 @@
 (* Implementation of Trie Trees, due 11/5.*)
 open Str
-
-(* module MakeTrieTree (TR : TrieTree) = struct *)
-(* [elt] is the type of an element in the priority queue. *)
-
 module CharMap = Map.Make (Char)
 
 (* Define the type of CharMap where the values are of type value_type *)
@@ -55,13 +51,10 @@ let rec prepend prefix lst =
    if value != empty, else return key. *)
 let rec search_all (Node tree) =
   let pairs = CharMap.bindings tree in
-  print_endline (string_of_int (List.length pairs));
   let rec search_pairs pairs =
     match pairs with
     | [] -> []
     | (key, _) :: t ->
-        print_endline ("at " ^ String.make 1 key);
-        (* (String.make 1key :: *)
         let a = search_pairs t in
         if CharMap.cardinal (get_tree (CharMap.find key tree)) != 0 then
           a @ prepend (String.make 1 key) (search_all (CharMap.find key tree))
@@ -74,5 +67,4 @@ let rec search prefix_list (Node tree) =
   | [] -> if is_empty tree then [] else search_all (Node tree)
   | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree))
 
-(* let search prefix tree = let prefix_list = to_char_list prefix in search_help
-   prefix_list tree *)
+let all_words (Node tree) = search (to_char_list "") (Node tree)

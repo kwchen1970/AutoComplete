@@ -22,3 +22,5 @@ val prepend : string -> string list -> string list
 
 val search : char list -> t -> string list
 (* val to_word_list :'a t-> word list *)
+
+val all_words : t -> string list
