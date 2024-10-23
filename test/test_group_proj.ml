@@ -41,7 +41,6 @@ module TrieTester (T : TRIE) = struct
       match expected with
       | [] -> true
       | h :: t ->
-          print_endline h;
           if List.mem h actual then cmp t actual else false
     in
     (* Check if all contents in expected are also in the tree containing words
@@ -53,6 +52,17 @@ module TrieTester (T : TRIE) = struct
     assert_equal (List.length expected) (List.length leaves)
       ~printer:string_of_int
 
+  let tree = insert_all [
+    "apple";
+    "aprle";
+    "appol";
+    "appla";
+    "apole";
+    "bapple";
+    "barple";
+    "triangle";
+  ] empty
+  let _ = print_endline (fold_tree (search (to_char_list "triangle") tree))
   (** Test suite that tests [insert]. *)
   let make_tree_tests =
     "Test Suite for [insert], [all_words] and [search]."
@@ -81,7 +91,8 @@ module TrieTester (T : TRIE) = struct
                 (all_words (insert_all word_lst empty))
                 "" word_lst
             in
-            make_search_test [ "bapple"; "barple" ] "b" word_lst);
+            let _ = make_search_test [ "bapple"; "barple" ] "b" word_lst in
+            make_search_test [ "triangle" ] "triangl" word_lst);
          ]
 
   let _ = run_test_tt_main make_tree_tests

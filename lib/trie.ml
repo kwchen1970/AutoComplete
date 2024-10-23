@@ -95,7 +95,7 @@ module Trie : TRIE = struct
 
   let rec search prefix_list (Node tree) =
     match prefix_list with
-    | [] -> if is_empty tree then [] else search_all (Node tree)
+    | [] -> if is_empty tree then [ "" ] else search_all (Node tree)
     | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree))
 
   let all_words (Node tree) = search (to_char_list "") (Node tree)
