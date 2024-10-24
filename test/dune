@@ -1,4 +1,4 @@
 (test
  (name test_group_proj)
- (libraries ounit2 group_proj)
+ (libraries ounit2 group_proj graphics)
  (deps (glob_files_rec ../data/*)))
