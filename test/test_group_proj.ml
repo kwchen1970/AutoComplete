@@ -45,7 +45,7 @@ module TrieTester (T : TRIE) = struct
       ~printer:string_of_int
 
   (* [make_search_test] *)
-  let make_search_test expected prefix word_lst =
+  let make_search_test expected prefix tree =
     "" >:: fun _ ->
     let rec cmp expected actual =
       match expected with
@@ -54,7 +54,7 @@ module TrieTester (T : TRIE) = struct
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
-    let leaves = search (to_char_list prefix) (insert_all word_lst empty) in
+    let leaves = search (to_char_list prefix) tree in
     assert_equal true (cmp expected leaves) ~printer:string_of_bool;
     (* Check if the length of [expected] = number of word leaves in the tree
        containing words from [word_list]. *)
@@ -93,15 +93,17 @@ module TrieTester (T : TRIE) = struct
            "triangle";
          ]
        in
+       let word_tree = insert_all word_lst empty in
        let _ = make_insert_test word_lst word_lst in
-       let _ = make_search_test [ "apple"; "appol"; "appla" ] "app" word_lst in
+       let _ = make_search_test [ "apple"; "appol"; "appla" ] "app" word_tree in
        let _ =
-         make_search_test (all_words (insert_all word_lst empty)) "" word_lst
+         make_search_test (all_words (insert_all word_lst empty)) "" word_tree
        in
-       let _ = make_search_test [ "bapple"; "barple" ] "b" word_lst in
-       make_search_test [ "triangle" ] "triangl" word_lst);
-      (let single_dict = create_dict "../data/COMMON.TXT" [] in
-       let wood_list =
+       let _ = make_search_test [ "bapple"; "barple" ] "b" word_tree in
+       make_search_test [ "triangle" ] "triangl" word_tree);
+      make_search_test [] "" empty;
+      (let wood_dict = create_dict "../data/COMMON.TXT" [] in
+       let wood_lst =
          [
            "wood alcohol";
            "wood anemone";
@@ -127,8 +129,9 @@ module TrieTester (T : TRIE) = struct
            "wood warbler";
          ]
        in
-       let _ = make_search_test wood_list "wood " single_dict in
-       make_search_test (List.rev wood_list) "wood " single_dict);
+       let word_tree = insert_all wood_dict empty in
+       let _ = make_search_test wood_lst "wood " word_tree in
+       make_search_test (List.rev wood_lst) "wood " word_tree);
     ]
 end
 

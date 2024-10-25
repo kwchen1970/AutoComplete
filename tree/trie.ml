@@ -32,6 +32,7 @@ end
 
 module Trie : TRIE = struct
   module CharMap = Map.Make (Char)
+  module StringMap = Map.Make (String)
 
   (* Define the type of CharMap where the values are of type value_type *)
   type t = Node of bool * int * t CharMap.t
@@ -43,6 +44,9 @@ module Trie : TRIE = struct
   exception Empty
 
   let empty = Node (false, 0, CharMap.empty)
+
+  (* Map word keys to int priorities. *)
+  let priorities = StringMap.empty
 
   let is_empty tree =
     match CharMap.cardinal tree with
@@ -116,11 +120,13 @@ module Trie : TRIE = struct
     search_pairs pairs
 
   let rec search prefix_list (Node (is_word, priority, tree)) =
-    match prefix_list with
-    | [] ->
-        if is_empty tree then [ "" ]
-        else search_all (Node (is_word, priority, tree))
-    | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree)) []
+    try
+      match prefix_list with
+      | [] ->
+          if is_empty tree then []
+          else search_all (Node (is_word, priority, tree))
+      | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree)) []
+    with Not_found -> []
 
   let all_words (Node (is_word, priority, tree)) =
     search (to_char_list "") (Node (is_word, priority, tree))
