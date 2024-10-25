@@ -1,0 +1,4 @@
+(library
+ (name tree)
+ (libraries str graphics)
+ )

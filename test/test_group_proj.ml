@@ -1,5 +1,5 @@
 open OUnit2
-include Group_proj.Trie
+include Tree.Trie
 module TestTrie = Trie
 
 module TrieTester (T : TRIE) = struct
