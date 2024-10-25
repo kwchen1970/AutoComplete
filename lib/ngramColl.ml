@@ -59,3 +59,7 @@ let get_suggestion coll str =
   match ngram with
   | None -> raise NotFound
   | Some v -> List.map (fun x -> x.word) v.suggestion
+
+(* let get_top_suggestion coll str = *)
+
+let to_str_list coll = List.map fst (StringMap.bindings coll)
