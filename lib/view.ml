@@ -1,8 +1,5 @@
 open Graphics
 include Tree.Trie
-module Tr = Trie
-
-let _ = Tr.empty
 
 let rec print_to_screen () =
   let c = read_key () in
