@@ -32,3 +32,6 @@ val get_occ : t -> string -> int
 val get_suggestion : t -> string -> string list
 (** [get_suggestion coll str] returns the list of suggested word (sorted by
     suggestion priority) following after [str] from collection [coll]. *)
+
+val to_str_list : t -> string list
+(** [to_str_list coll] is the list of ngrams in [coll]. *)
