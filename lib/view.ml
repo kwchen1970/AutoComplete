@@ -13,6 +13,11 @@ let rec bubble (st : int) (ed : int) () =
   fill_circle ed 540 20;
   fill_rect st 520 (ed - st) 40
 
+include Tree.Trie
+module Tr = Trie
+
+let _ = Tr.empty
+
 let rec print_to_screen () =
   (* let x = 100 in let y = 540 in moveto x y; *)
   let c = read_key () in
