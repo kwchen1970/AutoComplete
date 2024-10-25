@@ -20,7 +20,7 @@ module type TRIE = sig
   (** [insert word tree] is the Trie tree that results from inserting [word]
       into [tree]. *)
 
-  val prepend : string -> string list -> string list
+  val prepend : string -> string list -> string list -> string list
   (** [to_word_list tree] returns a list containing all the word leaves in the
       Trie tree [tree]. *)
 
@@ -73,13 +73,17 @@ module Trie : TRIE = struct
         in
         Node (is_word, priority, CharMap.add h new_tree tree)
 
-  let rec prepend prefix lst =
+  let rec prepend prefix lst acc =
     match lst with
-    | [] -> []
-    | h :: t -> (prefix ^ h) :: prepend prefix t
+    | [] -> acc
+    | h :: t -> prepend prefix t ((prefix ^ h) :: acc)
 
   (* For all keys in tree, continuting traversing through value pointed to by
      key if value != empty, else return key. *)
+
+  (* TODO: implement a StringMap that maps words to the Node containing info on
+     that word. Key = word, value = Node which search "word" would end up. *)
+
   let rec search_all (Node (is_word, priority, tree)) =
     let pairs = CharMap.bindings tree in
     let rec search_pairs pairs =
@@ -90,13 +94,24 @@ module Trie : TRIE = struct
           let a = search_pairs t in
           if CharMap.cardinal (get_tree (CharMap.find key tree)) != 0 then
             if is_word then
-              (a @ [ String.make 1 key ^ " " ^ string_of_int priority ])
-              @ a
-              @ prepend (String.make 1 key) (search_all (CharMap.find key tree))
-            else
               a
-              @ prepend (String.make 1 key) (search_all (CharMap.find key tree))
-          else a @ [ String.make 1 key ^ " " ^ string_of_int priority ]
+              @ [ String.make 1 key ]
+              @ List.flatten
+                  (a
+                  :: [
+                       prepend (String.make 1 key)
+                         (search_all (CharMap.find key tree))
+                         [];
+                     ])
+            else
+              List.flatten
+                (a
+                :: [
+                     prepend (String.make 1 key)
+                       (search_all (CharMap.find key tree))
+                       [];
+                   ])
+          else a @ [ String.make 1 key ]
     in
     search_pairs pairs
 
@@ -105,7 +120,7 @@ module Trie : TRIE = struct
     | [] ->
         if is_empty tree then [ "" ]
         else search_all (Node (is_word, priority, tree))
-    | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree))
+    | h :: t -> prepend (String.make 1 h) (search t (CharMap.find h tree)) []
 
   let all_words (Node (is_word, priority, tree)) =
     search (to_char_list "") (Node (is_word, priority, tree))

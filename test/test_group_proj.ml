@@ -15,6 +15,9 @@ let list_equal lst1 lst2 = List.sort compare lst1 = List.sort compare lst2
 module TrieTester (T : TRIE) = struct
   include T
 
+  (* Thread each [insert] function in [insert_all]. *)
+  (* Add tests for capitalization, punctuation, words that are substrings or
+     other words, multiple element words (not allowed, used regex to stop). *)
   let rec insert_all word_list tree =
     match word_list with
     | [] -> tree
@@ -72,10 +75,6 @@ module TrieTester (T : TRIE) = struct
       ]
       empty
 
-  let _ = print_endline (fold_tree (search (to_char_list "triangle") tree))
-  let fail = insert_all (create_dict "../data/TEST.TXT" []) empty
-  let _ = print_endline (fold_tree (all_words fail))
-
   (* Test suite that tests [insert]. *)
   let make_tree_tests =
     [
@@ -101,6 +100,35 @@ module TrieTester (T : TRIE) = struct
        in
        let _ = make_search_test [ "bapple"; "barple" ] "b" word_lst in
        make_search_test [ "triangle" ] "triangl" word_lst);
+      (let single_dict = create_dict "../data/COMMON.TXT" [] in
+       let wood_list =
+         [
+           "wood alcohol";
+           "wood anemone";
+           "wood block";
+           "wood coal";
+           "wood duck";
+           "wood engraving";
+           "wood hyacinth";
+           "wood ibis";
+           "wood lot";
+           "wood louse";
+           "wood meadow grass";
+           "wood mouse";
+           "wood nymph";
+           "wood pigeon";
+           "wood pitch";
+           "wood pulp";
+           "wood rat";
+           "wood sorrel";
+           "wood spirit";
+           "wood sugar";
+           "wood vinegar";
+           "wood warbler";
+         ]
+       in
+       let _ = make_search_test wood_list "wood " single_dict in
+       make_search_test (List.rev wood_list) "wood " single_dict);
     ]
 end
 
