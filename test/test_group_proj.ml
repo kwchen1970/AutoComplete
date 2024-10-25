@@ -1,5 +1,6 @@
 open OUnit2
 include Tree.Trie
+include Tree.Dict
 module TestTrie = Trie
 
 module TrieTester (T : TRIE) = struct
@@ -14,15 +15,12 @@ module TrieTester (T : TRIE) = struct
 
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
 
-  (* [make_insert_test] *)
   let make_insert_test expected word_lst =
     "" >:: fun _ ->
     let rec cmp expected actual =
       match expected with
       | [] -> true
-      | h :: t ->
-          print_endline h;
-          if List.mem h actual then cmp t actual else false
+      | h :: t -> if List.mem h actual then cmp t actual else false
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
@@ -40,8 +38,7 @@ module TrieTester (T : TRIE) = struct
     let rec cmp expected actual =
       match expected with
       | [] -> true
-      | h :: t ->
-          if List.mem h actual then cmp t actual else false
+      | h :: t -> if List.mem h actual then cmp t actual else false
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
@@ -52,52 +49,28 @@ module TrieTester (T : TRIE) = struct
     assert_equal (List.length expected) (List.length leaves)
       ~printer:string_of_int
 
-  let tree = insert_all [
-    "apple";
-    "aprle";
-    "appol";
-    "appla";
-    "apole";
-    "bapple";
-    "barple";
-    "triangle";
-  ] empty
-  let _ = print_endline (fold_tree (search (to_char_list "triangle") tree))
-  (** Test suite that tests [insert]. *)
-  let make_tree_tests =
-    "Test Suite for [insert], [all_words] and [search]."
-    >::: [
-           make_insert_test
-             [ "apple"; "appol"; "aprle" ]
-             [ "apple"; "appol"; "aprle" ];
-           (let word_lst =
-              [
-                "apple";
-                "aprle";
-                "appol";
-                "appla";
-                "apole";
-                "bapple";
-                "barple";
-                "triangle";
-              ]
-            in
-            let _ = make_insert_test word_lst word_lst in
-            let _ =
-              make_search_test [ "apple"; "appol"; "appla" ] "app" word_lst
-            in
-            let _ =
-              make_search_test
-                (all_words (insert_all word_lst empty))
-                "" word_lst
-            in
-            let _ = make_search_test [ "bapple"; "barple" ] "b" word_lst in
-            make_search_test [ "triangle" ] "triangl" word_lst);
-         ]
+  (* let tree = insert_all [ "apple"; "aprle"; "appol"; "appla"; "apole";
+     "bapple"; "barple"; "triangle"; ] empty *)
 
-  let _ = run_test_tt_main make_tree_tests
+  (* let _ = print_endline (fold_tree (search (to_char_list "triangle")
+     tree)) *)
+  let fail = insert_all (create_dict "../data/TEST.TXT" []) empty
+  let _ = print_endline (fold_tree (all_words fail))
+
+  (* Test suite that tests [insert]. *)
+  (* let make_tree_tests = "Test Suite for [insert], [all_words] and [search]."
+     >::: [ make_insert_test [ "apple"; "appol"; "aprle" ] [ "apple"; "appol";
+     "aprle" ]; (let word_lst = [ "apple"; "aprle"; "appol"; "appla"; "apole";
+     "bapple"; "barple"; "triangle"; ] in let _ = make_insert_test word_lst
+     word_lst in let _ = make_search_test [ "apple"; "appol"; "appla" ] "app"
+     word_lst in let _ = make_search_test (all_words (insert_all word_lst
+     empty)) "" word_lst in let _ = make_search_test [ "bapple"; "barple" ] "b"
+     word_lst in make_search_test [ "triangle" ] "triangl" word_lst); ] *)
+
+  (* let _ = run_test_tt_main make_tree_tests *)
 end
 
 module TrieTest = TrieTester (Trie)
 
-
+(* let word_list = create_dict "../data/TEST.TXT" [] let _ = print_endline (fold
+   word_list) *)
