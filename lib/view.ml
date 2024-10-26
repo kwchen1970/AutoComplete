@@ -44,7 +44,7 @@ let rec words pos = function
       set_color black;
       moveto (size_x () / 3) pos;
       draw_string h;
-      words (pos - 40) t
+      words (pos + 40) t
 
 let no_suggest () =
   set_color (rgb 229 228 226);
@@ -61,8 +61,29 @@ let print_suggestions1 lst =
       (520 - (List.length lst * 40))
       800
       ((List.length lst * 40) + 20);
-    words 500 lst
+    words 220 lst
   end
+
+let is_inside (x, y) (rect_x, rect_y) width height =
+  x >= rect_x && x <= rect_x + width && y >= rect_y && y <= rect_y + height
+
+let find_chosen_suggestion lst =
+  let event = wait_next_event [ Button_down; Key_pressed ] in
+  let click_x = event.mouse_x in
+  let click_y = event.mouse_y in
+  let menu_x = (size_x () / 3) - 125 in
+  let menu_y = 520 - (List.length lst * 40) in
+  let width = 800 in
+  let height = (List.length lst * 40) + 20 in
+  if is_inside (click_x, click_y) (menu_x, menu_y) width height then
+    List.find_map
+      (fun (option, index) ->
+        let option_y = menu_y + (index * 40) in
+        if is_inside (click_x, click_y) (menu_x, option_y) width 40 then
+          Some option (* Return the clicked option *)
+        else None)
+      (List.mapi (fun i option -> (option, i)) lst)
+  else None
 
 let continue lst =
   let event = wait_next_event [ Key_pressed ] in
@@ -154,21 +175,32 @@ let rec print_to_screen accum =
   else
     (* Append the character to the accumulator if it's not a space *)
     let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
+    let total_accum = accum ^ String.make 1 c in
     no_suggest ();
 
     let suggestions = Tr.search (string_to_char_list new_accum) tree in
-    if suggestions = [] then
-      no_suggest () (* Call no_suggest if there are no suggestions *)
-    else print_suggestions1 suggestions;
+    let choice, chose_word =
+      if suggestions = [] then
+        (* Call no_suggest if there are no suggestions *)
+        let () = no_suggest () in
+        ("", false)
+      else
+        let () = print_suggestions1 suggestions in
+        let user_choice = find_chosen_suggestion suggestions in
+        match user_choice with
+        | None -> ("", false)
+        | Some s -> (s, true)
+    in
 
     (* Display the current typed characters *)
     set_color black;
-    let x_offset = 120 in
+    let x_offset = 140 in
     let y_offset = 540 in
-    let current_x = x_offset + (String.length new_accum * 7) in
+    let current_x = x_offset + (String.length total_accum * 7) in
     moveto current_x y_offset;
     if String.length new_accum > 0 then
-      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
+      draw_string (String.make 1 total_accum.[String.length total_accum - 1])
+    else if chose_word then draw_string (" " ^ choice)
     else draw_string " ";
     (* Call the function recursively with the new accumulator *)
-    print_to_screen new_accum
+    print_to_screen total_accum
