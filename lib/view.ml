@@ -150,10 +150,10 @@ let rec print_to_screen accum =
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
 
-  if c = 'q' then ()
+  if c = '\027' then ()
   else
     (* Append the character to the accumulator if it's not a space *)
-    let new_accum = if c = ' ' then accum else accum ^ String.make 1 c in
+    let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
     no_suggest ();
 
     let suggestions = Tr.search (string_to_char_list new_accum) tree in
@@ -163,15 +163,12 @@ let rec print_to_screen accum =
 
     (* Display the current typed characters *)
     set_color black;
-    (* Set the color for the typed characters *)
-    let x_offset = 100 in
-    (* Starting x position *)
+    let x_offset = 120 in
     let y_offset = 540 in
-    (* y position for the text *)
     let current_x = x_offset + (String.length new_accum * 7) in
-    (* Calculate new x position based on character width *)
     moveto current_x y_offset;
-    draw_string new_accum;
-
+    if String.length new_accum > 0 then
+      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
+    else draw_string " ";
     (* Call the function recursively with the new accumulator *)
     print_to_screen new_accum
