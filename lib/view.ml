@@ -38,31 +38,31 @@ let rec bubble (st : int) (ed : int) () =
    let c = read_key () in if c = '\027' then () else ( set_color black;
    draw_string (String.make 1 c); flush (); print_to_screen ()) *)
 
-let rec words pos = function
+let no_suggest () =
+  set_color (rgb 229 228 0);
+  (* Pure white color *)
+  fill_rect
+    ((size_x () / 3) - 125) (* Same X-offset as print_suggestions1 *)
+    (500 - 200) (* Ensure it covers the max vertical space *)
+    800 (* Width matching print_suggestions1 *)
+    240
+
+let rec words pos_y = function
   | [] -> ()
   | h :: t ->
       set_color black;
-      moveto (size_x () / 3) pos;
+      moveto (size_x () / 3) pos_y;
       draw_string h;
-      words (pos + 40) t
-
-let no_suggest () =
-  set_color (rgb 229 228 226);
-  fill_rect ((size_x () / 3) - 125) 520 250 40
+      words (pos_y - 40) t
 
 let print_suggestions1 lst =
-  if lst = [] then begin
-    no_suggest ()
-  end
-  else begin
-    set_color (rgb 229 228 226);
-    fill_rect
-      ((size_x () / 3) - 125)
-      (520 - (List.length lst * 40))
-      800
-      ((List.length lst * 40) + 20);
-    words 220 lst
-  end
+  let x_offset = (size_x () / 3) - 125 in
+  let y_offset = 500 in
+  let box_height = (List.length lst * 40) + 20 in
+  set_color (rgb 229 228 226);
+  fill_rect x_offset (y_offset - box_height) 800 box_height;
+  words (y_offset - 40) lst;
+  synchronize ()
 
 let is_inside (x, y) (rect_x, rect_y) width height =
   x >= rect_x && x <= rect_x + width && y >= rect_y && y <= rect_y + height
@@ -166,7 +166,37 @@ let rec accumulate_and_display acc =
     print_suggestions1 suggestions;
     accumulate_and_display updated_acc)
 
-let rec print_to_screen accum =
+(* let rec print_to_screen accum = (* Get the current character input *) let
+   event = wait_next_event [ Key_pressed ] in let c = event.key in
+
+   if c = '\027' then () else (* Append the character to the accumulator if it's
+   not a space *) let new_accum = if c = ' ' then "" else accum ^ String.make 1
+   c in let total_accum = accum ^ String.make 1 c in no_suggest ();
+
+   let suggestions = Tr.search (string_to_char_list new_accum) tree in let
+   choice, chose_word = if suggestions = [] then (* Call no_suggest if there are
+   no suggestions *) let () = no_suggest () in ("", false) else let () =
+   print_suggestions1 suggestions in let user_choice = find_chosen_suggestion
+   suggestions in match user_choice with | None -> ("", false) | Some s -> (s,
+   true) in
+
+   (* Display the current typed characters *) set_color black; let x_offset =
+   140 in let y_offset = 540 in let current_x = x_offset + (String.length
+   total_accum * 7) in let total_accum = if chose_word then total_accum ^ " " ^
+   choice else total_accum in moveto current_x y_offset; if String.length
+   new_accum > 0 then draw_string (String.make 1 total_accum.[String.length
+   total_accum - 1]) else if chose_word then draw_string (" " ^ choice) else
+   draw_string " "; (* Call the function recursively with the new accumulator *)
+   print_to_screen total_accum *)
+
+let print_word word x_int y_int =
+  let len = String.length word in
+  let nex_x = x_int + len + 1 in
+  moveto nex_x y_int;
+  draw_string word
+
+let rec print_to_screen accum x_int y_int counter =
+  synchronize ();
   (* Get the current character input *)
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
@@ -175,35 +205,22 @@ let rec print_to_screen accum =
   else
     (* Append the character to the accumulator if it's not a space *)
     let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-    let total_accum = accum ^ String.make 1 c in
-    no_suggest ();
-
     let suggestions = Tr.search (string_to_char_list new_accum) tree in
-    let choice, chose_word =
-      if suggestions = [] then
-        (* Call no_suggest if there are no suggestions *)
-        let () = no_suggest () in
-        ("", false)
-      else
-        let () = print_suggestions1 suggestions in
-        let user_choice = find_chosen_suggestion suggestions in
-        match user_choice with
-        | None -> ("", false)
-        | Some s -> (s, true)
-    in
+    if c = ' ' then no_suggest () else print_suggestions1 suggestions;
+    print_endline new_accum;
+
+    if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
 
     (* Display the current typed characters *)
     set_color black;
-    let x_offset = 140 in
-    let y_offset = 540 in
-    let current_x = x_offset + (String.length total_accum * 7) in
-    let total_accum =
-      if chose_word then total_accum ^ " " ^ choice else total_accum
-    in
-    moveto current_x y_offset;
+    let x_offset = x_int in
+    let y_offset = y_int in
+
+    let count = x_offset + 7 in
+    moveto count y_offset;
     if String.length new_accum > 0 then
-      draw_string (String.make 1 total_accum.[String.length total_accum - 1])
-    else if chose_word then draw_string (" " ^ choice)
+      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
     else draw_string " ";
+
     (* Call the function recursively with the new accumulator *)
-    print_to_screen total_accum
+    print_to_screen new_accum count y_offset (count + 4)

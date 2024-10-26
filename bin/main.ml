@@ -8,4 +8,4 @@ type t = Tr.t
 let () =
   basic_window ();
   start_text ();
-  print_to_screen ""
+  print_to_screen "" 120 540 120
