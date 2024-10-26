@@ -197,6 +197,9 @@ let rec print_to_screen accum =
     let x_offset = 140 in
     let y_offset = 540 in
     let current_x = x_offset + (String.length total_accum * 7) in
+    let total_accum =
+      if chose_word then total_accum ^ " " ^ choice else total_accum
+    in
     moveto current_x y_offset;
     if String.length new_accum > 0 then
       draw_string (String.make 1 total_accum.[String.length total_accum - 1])
