@@ -8,4 +8,5 @@ type t = Tr.t
 let () =
   basic_window ();
   start_text ();
+  no_suggest ();
   print_to_screen "" 135 540 120

@@ -27,6 +27,27 @@ let tree =
 
 let string_to_char_list str = List.of_seq (String.to_seq str)
 
+let blend_color alpha bg fg =
+  let r1 = (bg lsr 16) land 0xFF in
+  (* Extract red component from bg *)
+  let g1 = (bg lsr 8) land 0xFF in
+  (* Extract green component from bg *)
+  let b1 = bg land 0xFF in
+
+  (* Extract blue component from bg *)
+  let r2 = (fg lsr 16) land 0xFF in
+  (* Extract red component from fg *)
+  let g2 = (fg lsr 8) land 0xFF in
+  (* Extract green component from fg *)
+  let b2 = fg land 0xFF in
+
+  (* Extract blue component from fg *)
+  let blend a c1 c2 =
+    int_of_float ((a *. float c2) +. ((1. -. a) *. float c1))
+  in
+
+  rgb (blend alpha r1 r2) (blend alpha g1 g2) (blend alpha b1 b2)
+
 let rec bubble (st : int) (ed : int) () =
   set_color (rgb 229 228 226);
 
@@ -39,7 +60,7 @@ let rec bubble (st : int) (ed : int) () =
    draw_string (String.make 1 c); flush (); print_to_screen ()) *)
 
 let no_suggest () =
-  set_color (rgb 229 228 0);
+  set_color (rgb 229 228 226);
   (* Pure white color *)
   fill_rect
     ((size_x () / 3) - 125) (* Same X-offset as print_suggestions1 *)
@@ -133,8 +154,11 @@ let autofill word_accum suggestions =
     (String.length suggestion - String.length word_accum)
 
 let rec print_autofill rest_of_word x_int y_int color =
+  let bg = rgb 229 228 226 in
+  let fg = color in
+  let col = blend_color 0.2 bg fg in
   let count = x_int + 7 in
-  set_color color;
+  set_color col;
   moveto count y_int;
   draw_string (String.make 1 rest_of_word.[0]);
   if String.length rest_of_word > 1 then
