@@ -127,6 +127,22 @@ let return_suggest incr x y =
   let lis = turn_char_to_string_lis tree in
   print_suggestions lis x (y + incr)
 
+let autofill word_accum suggestions =
+  let suggestion = List.nth suggestions 0 in
+  String.sub suggestion (String.length word_accum)
+    (String.length suggestion - String.length word_accum)
+
+let rec print_autofill rest_of_word x_int y_int color =
+  let count = x_int + 7 in
+  set_color color;
+  moveto count y_int;
+  draw_string (String.make 1 rest_of_word.[0]);
+  if String.length rest_of_word > 1 then
+    print_autofill
+      (String.sub rest_of_word 1 (String.length rest_of_word - 1))
+      count y_int color
+  else ()
+
 let basic_window () =
   open_graph " 1920x1080";
   bubble 80 1280 ();
@@ -198,30 +214,45 @@ let print_word word x_int y_int =
 let rec print_to_screen accum x_int y_int counter =
   synchronize ();
   (* Get the current character input *)
+  let old_suggestions = Tr.search (string_to_char_list accum) tree in
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
   if c = '\027' then ()
-  else
-    (* Append the character to the accumulator if it's not a space *)
-    let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-    let suggestions = Tr.search (string_to_char_list new_accum) tree in
-    if new_accum = "" || c = ' ' then no_suggest ()
-    else print_suggestions1 suggestions;
-    print_endline new_accum;
+  else if c = '\t' && String.length accum > 0 then
+    if List.length old_suggestions > 0 then (
+      let rest_of_word = autofill accum old_suggestions in
+      print_autofill rest_of_word x_int y_int black;
+      let count = x_int + (7 * String.length rest_of_word) in
+      print_to_screen "" count y_int (count + 4))
+    else ()
+  else if List.length old_suggestions > 0 then
+    let rest_of_word = autofill accum old_suggestions in
+    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
+  else ();
+  (* Append the character to the accumulator if it's not a space *)
+  let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
+  let suggestions = Tr.search (string_to_char_list new_accum) tree in
+  if c = ' ' then no_suggest () else print_suggestions1 suggestions;
+  print_endline new_accum;
 
-    (* if c = '\b' then set_color (rgb 229 228 226); fill_rect (x_int - 7)
-       (y_int + 4) 5 10; synchronize (); *)
-    if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
+  if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
 
-    (* Display the current typed characters *)
-    set_color black;
-    let x_offset = x_int in
-    let y_offset = y_int in
-    let count = x_offset + 7 in
-    moveto count y_offset;
-    if String.length new_accum > 0 then
+  (* Display the current typed characters *)
+  set_color black;
+  let x_offset = x_int in
+  let y_offset = y_int in
+
+  let count = x_offset + 7 in
+  moveto count y_offset;
+  if String.length new_accum > 0 then
+    let () =
       draw_string (String.make 1 new_accum.[String.length new_accum - 1])
-    else draw_string " ";
+    in
+    if List.length suggestions > 0 then
+      let rest_of_word = autofill new_accum suggestions in
+      print_autofill rest_of_word count y_offset red
+    else ()
+  else draw_string " ";
 
-    (* Call the function recursively with the new accumulator *)
-    print_to_screen new_accum count y_offset (count + 4)
+  (* Call the function recursively with the new accumulator *)
+  print_to_screen new_accum count y_offset (count + 4)
