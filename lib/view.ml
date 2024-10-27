@@ -43,7 +43,7 @@ let no_suggest () =
   (* Pure white color *)
   fill_rect
     ((size_x () / 3) - 125) (* Same X-offset as print_suggestions1 *)
-    (500 - 200) (* Ensure it covers the max vertical space *)
+    (490 - 200) (* Ensure it covers the max vertical space *)
     800 (* Width matching print_suggestions1 *)
     240
 
@@ -200,22 +200,23 @@ let rec print_to_screen accum x_int y_int counter =
   (* Get the current character input *)
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
-
   if c = '\027' then ()
   else
     (* Append the character to the accumulator if it's not a space *)
     let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
     let suggestions = Tr.search (string_to_char_list new_accum) tree in
-    if c = ' ' then no_suggest () else print_suggestions1 suggestions;
+    if new_accum = "" || c = ' ' then no_suggest ()
+    else print_suggestions1 suggestions;
     print_endline new_accum;
 
+    (* if c = '\b' then set_color (rgb 229 228 226); fill_rect (x_int - 7)
+       (y_int + 4) 5 10; synchronize (); *)
     if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
 
     (* Display the current typed characters *)
     set_color black;
     let x_offset = x_int in
     let y_offset = y_int in
-
     let count = x_offset + 7 in
     moveto count y_offset;
     if String.length new_accum > 0 then
