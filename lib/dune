@@ -1,4 +1,3 @@
 (library
  (name group_proj)
- (libraries str graphics tree)
- (instrumentation (backend bisect_ppx)))
+ (libraries str graphics core_kernel.pairing_heap tree))
