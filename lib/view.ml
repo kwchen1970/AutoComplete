@@ -158,7 +158,7 @@ let basic_window () =
 
   set_text_size 500;
 
-  let title = "AutoComplete :)" in
+  let title = "" in
   set_text_size 100;
   set_color blue;
   let x = (size_x () - (String.length title * 8)) / 2 in
@@ -271,11 +271,10 @@ let rec print_to_screen accum x_int y_int counter =
     
       (* Read all pixel data *)
       let pixel_data = ref [] in
-     
-        while true do
+        try while true do
           let value = input_line ic in
           pixel_data := value :: !pixel_data
-        done;
+        done with End_of_file -> ();
      
     
       (* Check if we have enough values *)
