@@ -4,7 +4,6 @@ include Tree.Trie
 module Tr = Trie
 
 type t = Tr.t
-
 (** writing the image out functions*)
 let rgb24_to_color_array (img : Rgb24.t) : Graphics.color array array =
   let w, h = (img.Rgb24.width, img.Rgb24.height) in
