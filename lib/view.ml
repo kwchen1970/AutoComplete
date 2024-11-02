@@ -3,6 +3,25 @@ include Tree.Trie
 module Tr = Trie
 
 type t = Tr.t
+(**Functions taken from dict.ml*)
+exception File_not_found of string
+let create_lines_list file_name =
+  try
+    let lines_enum = BatFile.lines_of file_name in
+    let lines_list = BatList.of_enum lines_enum in
+    lines_list
+  with Sys_error _ ->
+    raise (File_not_found ("[" ^ file_name ^ "] does not exist."))
+
+let rec fill_dictionary lines_list dict =
+  match lines_list with
+  | [] -> dict
+  | h :: t -> h :: fill_dictionary t dict
+
+let create_dict file_name dict =
+  fill_dictionary (create_lines_list file_name) dict
+let dict_list = create_dict "data/COMMON.TXT" []
+
 (**[insert_all lis t] inserts all words in lis into a t*)
 let rec insert_all word_list tree =
   match word_list with
@@ -10,7 +29,7 @@ let rec insert_all word_list tree =
   | h :: t ->
       let new_tree = Tr.insert (Tr.to_char_list h) tree in
       insert_all t new_tree
-
+let tree2 = insert_all dict_list Tr.empty
 (*test tree I am using for the prototype*)
 let tree =
   insert_all
@@ -158,7 +177,7 @@ let basic_window () =
 
   set_text_size 500;
 
-  let title = "AutoComplete :)" in
+  let title = "" in
   set_text_size 100;
   set_color blue;
   let x = (size_x () - (String.length title * 8)) / 2 in
@@ -182,7 +201,7 @@ let rec accumulate_and_display acc =
   let c = read_key () in
   let updated_acc = acc ^ String.make 1 c in
 
-  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
+  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree2 in
   if c = ' ' then (
     print_suggestions1 suggestions;
     accumulate_and_display "")
@@ -271,11 +290,10 @@ let rec print_to_screen accum x_int y_int counter =
     
       (* Read all pixel data *)
       let pixel_data = ref [] in
-     
-        while true do
+        try while true do
           let value = input_line ic in
           pixel_data := value :: !pixel_data
-        done;
+        done with End_of_file -> ();
      
     
       (* Check if we have enough values *)
