@@ -156,7 +156,8 @@ module Trie : TRIE = struct
 
   (* When the user is typing the same word, return the Node where the search
      function ends up at the last prefix, and then start searching from that
-     Node. let last_node = ... *)
+     Node. let last_node = ... Implement something that limits searched list to
+     max 5 or smth.*)
   exception Empty
 
   let empty = Node (false, 0, StringMap.empty)
