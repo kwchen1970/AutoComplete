@@ -1,3 +1,5 @@
 (library
  (name tree)
- (libraries str graphics batteries))
+ (libraries str graphics batteries)
+ 
+ (instrumentation (backend bisect_ppx)))

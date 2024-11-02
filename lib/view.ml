@@ -8,7 +8,7 @@ let rec insert_all word_list tree =
   match word_list with
   | [] -> tree
   | h :: t ->
-      let new_tree = Tr.insert (Tr.to_char_list h) tree in
+      let new_tree = Tr.insert (Tr.to_char_list h) tree "" in
       insert_all t new_tree
 
 (*test tree I am using for the prototype*)
@@ -182,7 +182,7 @@ let rec accumulate_and_display acc =
   let c = read_key () in
   let updated_acc = acc ^ String.make 1 c in
 
-  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
+  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree "" in
   if c = ' ' then (
     print_suggestions1 suggestions;
     accumulate_and_display "")
@@ -200,7 +200,7 @@ let print_word word x_int y_int =
 let rec print_to_screen accum x_int y_int counter =
   synchronize ();
   (* Get the current character input *)
-  let old_suggestions = Tr.search (string_to_char_list accum) tree in
+  let old_suggestions = Tr.search (string_to_char_list accum) tree "" in
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
   if c = '\027' then ()
@@ -217,7 +217,7 @@ let rec print_to_screen accum x_int y_int counter =
   else ();
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-  let suggestions = Tr.search (string_to_char_list new_accum) tree in
+  let suggestions = Tr.search (string_to_char_list new_accum) tree "" in
   if c = ' ' then no_suggest () else print_suggestions1 suggestions;
 
   if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
