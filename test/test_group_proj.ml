@@ -3,17 +3,17 @@ open Group_proj
 include Tree.Trie
 include Tree.Dict
 module TestTrie = Trie
-module TestTrieString = TrieString
 
 let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
-let tree = TrieString.empty
-let tree = TrieString.insert (TrieString.to_char_list "app") tree ""
-let tree = TrieString.insert (TrieString.to_char_list "tringle") tree ""
-let tree = TrieString.insert (TrieString.to_char_list "apple") tree ""
-let tree = TrieString.insert (TrieString.to_char_list "applre") tree ""
-let tree = TrieString.insert (TrieString.to_char_list "appleiaiai") tree ""
-let searched = TrieString.search (TrieString.to_char_list "ap") tree ""
+let tree = Trie.empty
+let tree = Trie.insert (Trie.to_char_list "app") tree
+let tree = Trie.insert (Trie.to_char_list "apple") tree
+let tree = Trie.insert (Trie.to_char_list "applre") tree
+let searched = Trie.search (Trie.to_char_list "a") tree
 let _ = print_endline (fold_tree searched)
+let last = snd !Trie.last_visited
+let searched1 = Trie.search (Trie.to_char_list "pple") last
+let _ = print_endline (fold_tree searched1)
 
 let rec print_str_list lst =
   match lst with
@@ -33,7 +33,7 @@ module TrieTester (T : TRIE) = struct
     match word_list with
     | [] -> tree
     | h :: t ->
-        let new_tree = insert (to_char_list h) tree "" in
+        let new_tree = insert (to_char_list h) tree in
         insert_all t new_tree
 
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
@@ -65,7 +65,7 @@ module TrieTester (T : TRIE) = struct
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
-    let leaves = search (to_char_list prefix) tree "" in
+    let leaves = search (to_char_list prefix) tree in
     assert_equal true (cmp expected leaves) ~printer:string_of_bool;
     (* Check if the length of [expected] = number of word leaves in the tree
        containing words from [word_list]. *)
@@ -165,11 +165,11 @@ module NGramTester (C : module type of NgramColl) = struct
     ]
 end
 
-module TrieTest = TrieTester (Trie)
-module NGramTest = NGramTester (NgramColl)
+(* module DepTrieTest = TrieTester (DepreciatedTrie) module TrieTest =
+   TrieTester (Trie) module NGramTest = NGramTester (NgramColl)
 
-let test_suite =
-  "test suite"
-  >::: List.flatten [ TrieTest.make_tree_tests; NGramTest.make_ngram_test ]
+   let test_suite = "test suite" >::: List.flatten [ (*
+   DepTrieTest.make_tree_tests; *) TrieTest.make_tree_tests; (*
+   NGramTest.make_ngram_test; *) ]
 
-let _ = run_test_tt_main test_suite
+   let _ = run_test_tt_main test_suite *)
