@@ -150,26 +150,111 @@ module NGramTester (C : module type of NgramColl) = struct
   include C
 
   let add_all coll lst =
-    List.fold_left (fun coll x -> C.add_ngram coll (fst x) (snd x)) coll lst
+    List.iter (fun x -> C.add_ngram coll (fst x) (snd x)) lst;
+    coll
 
   let make_add_test exp input =
     "" >:: fun _ ->
-    let list_of_coll = C.to_str_list (add_all C.empty input) in
+    let list_of_coll = C.to_str_list (add_all (C.empty ()) input) in
     assert_equal ~cmp:list_equal exp list_of_coll ~printer:print_str_list
+
+  let make_top_suggestion_test exp coll str =
+    "" >:: fun _ ->
+    let top_suggestion = C.get_top_suggestion coll str in
+    assert_equal exp top_suggestion ~printer:(fun x -> x)
+
+  let make_suggestion_test exp coll str =
+    "" >:: fun _ ->
+    let suggestion = C.get_suggestion coll str in
+    assert_equal exp suggestion ~printer:print_str_list
+
+  let make_occ_test exp coll str =
+    "" >:: fun _ -> assert_equal exp (C.get_occ coll str) ~printer:string_of_int
+
+  let make_s_occ_test exp coll str c =
+    "" >:: fun _ ->
+    assert_equal exp (C.get_s_occ coll str c) ~printer:string_of_int
+
+  let make_mutable_occ_test =
+    "" >:: fun _ ->
+    assert_equal 3 (fst C.test_mutability) ~printer:string_of_int
+
+  let make_mutable_sug_test =
+    "" >:: fun _ ->
+    assert_equal ~cmp:list_equal [ "testA"; "testB" ] (snd C.test_mutability)
+      ~printer:print_str_list
+
+  (* let make_mutable_socc_test = "" >:: fun _ -> assert_equal 2
+     C.test_mutability ~printer:string_of_int *)
+
+  let coll_wood =
+    add_all (C.empty ())
+      [
+        ("wood", "alcohol");
+        ("wood", "anemone");
+        ("wood", "block");
+        ("wood", "coal");
+        ("wood", "duck");
+        ("wood", "engraving");
+        ("wood", "engraving");
+        ("wood", "engraving");
+        ("wood", "meadow");
+        ("wood", "mouse");
+        ("wood", "nymph");
+        ("wood", "pigeon");
+        ("wood", "pigeon");
+        ("wood", "pitch");
+        ("wood", "pulp");
+        ("wood", "sorrel");
+        ("wood", "spirit");
+        ("wood", "sugar");
+        ("wood", "vinegar");
+        ("wood", "warbler");
+        ("nonwood", "yeah");
+      ]
+
+  let wood_suggestion =
+    [
+      "engraving";
+      "pigeon";
+      "warbler";
+      "vinegar";
+      "sugar";
+      "spirit";
+      "sorrel";
+      "pulp";
+      "pitch";
+      "nymph";
+      "mouse";
+      "meadow";
+      "duck";
+      "coal";
+      "block";
+      "anemone";
+      "alcohol";
+    ]
 
   let make_ngram_test =
     [
       make_add_test
         [ "AA BB CCC"; "A B CC"; "AAA BB" ]
         [ ("A B CC", "c"); ("AA BB CCC", "aa"); ("AAA BB", "aaa") ];
+      make_top_suggestion_test "engraving" coll_wood "wood";
+      make_suggestion_test wood_suggestion coll_wood "wood";
+      make_occ_test 20 coll_wood "wood";
+      make_s_occ_test 3 coll_wood "wood" "engraving";
+      make_s_occ_test 2 coll_wood "wood" "pigeon";
+      make_mutable_occ_test;
+      make_mutable_sug_test;
+      (* make_mutable_socc_test; *)
     ]
 end
 
-(* module DepTrieTest = TrieTester (DepreciatedTrie) module TrieTest =
-   TrieTester (Trie) module NGramTest = NGramTester (NgramColl)
+module TrieTest = TrieTester (Trie)
+module NGramTest = NGramTester (NgramColl)
 
-   let test_suite = "test suite" >::: List.flatten [ (*
-   DepTrieTest.make_tree_tests; *) TrieTest.make_tree_tests; (*
-   NGramTest.make_ngram_test; *) ]
+let test_suite =
+  "test suite"
+  >::: List.flatten [ TrieTest.make_tree_tests; NGramTest.make_ngram_test ]
 
-   let _ = run_test_tt_main test_suite *)
+let _ = run_test_tt_main test_suite
