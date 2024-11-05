@@ -1,7 +1,5 @@
-(* open Core.Pairing_heap *)
 module StringMap = Map.Make (String)
 
-(* TODO: use a priority queue with priority = occ instead *)
 type s_elt = {
   word : string;
   s_occ : int;

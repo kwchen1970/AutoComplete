@@ -146,11 +146,42 @@ module NGramTester (C : module type of NgramColl) = struct
     let list_of_coll = C.to_str_list (add_all C.empty input) in
     assert_equal ~cmp:list_equal exp list_of_coll ~printer:print_str_list
 
+  let make_top_suggestion_test exp coll str =
+    "" >:: fun _ ->
+    let top_suggestion = C.get_top_suggestion coll str in
+    assert_equal exp top_suggestion ~printer:(fun x -> x)
+
+  let make_suggestion_test exp coll str =
+    "" >:: fun _ ->
+    let suggestion = C.get_suggestion coll str in
+    assert_equal exp suggestion ~printer:print_str_list
+
+  let make_occ_test exp coll str =
+    "" >:: fun _ -> assert_equal exp (C.get_occ coll str) ~printer:string_of_int
+
+  let coll_wood =
+    add_all C.empty
+      [
+        (* ("wood", "alcohol"); ("wood", "anemone"); ("wood", "block"); ("wood",
+           "coal"); ("wood", "duck"); *)
+        ("wood", "engraving");
+        ("wood", "engraving");
+        ("wood", "engraving");
+        ("wood", "meadow");
+        (* ("wood", "mouse"); ("wood", "nymph"); ("wood", "pigeon"); ("wood",
+           "pigeon"); ("wood", "pitch"); ("wood", "pulp"); ("wood", "rat");
+           ("wood", "sorrel"); ("wood", "spirit"); ("wood", "sugar"); ("wood",
+           "vinegar"); ("wood", "warbler"); *)
+      ]
+
   let make_ngram_test =
     [
       make_add_test
         [ "AA BB CCC"; "A B CC"; "AAA BB" ]
         [ ("A B CC", "c"); ("AA BB CCC", "aa"); ("AAA BB", "aaa") ];
+      make_top_suggestion_test "engraving" coll_wood "wood";
+      make_suggestion_test [ "engraving"; "meadow" ] coll_wood "wood";
+      make_occ_test 4 coll_wood "wood";
     ]
 end
 
