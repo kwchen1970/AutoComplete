@@ -51,7 +51,6 @@ let () =
     let color_array = load_ppm_as_color_array "data/actual_sugar_title.ppm" in
     let img = Graphics.make_image color_array in
     Graphics.draw_image img 550 800;
-    (* no_suggest (); *)
     (* print_to_screen "" 135 540 120 *)
     print_to_screen "" 440 535 120
   with

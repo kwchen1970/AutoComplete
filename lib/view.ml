@@ -111,14 +111,10 @@ let print_suggestions1 lst =
     fill_rect x_offset (y_offset - box_height) 800 (box_height - 20); (* large textbox*)
     fill_circle (x_offset + 20) (y_offset - 20) 20;
     fill_circle (x_offset + 800 - 20) (y_offset - 20) 20; 
-    (* set_color black; *)
-    fill_rect (x_offset + 20) (y_offset - 40) 760 40;  
-    (* set_color (rgb 229 228 226); *)
+    fill_rect (x_offset + 20) (y_offset - 40) 760 40;   (* top rounded corners*)
     fill_circle (x_offset + 20) (y_offset - box_height) 20;
     fill_circle (x_offset + 800 - 20) (y_offset - box_height) 20;
-    fill_rect (x_offset + 20) (y_offset - box_height - 20) 760 40;
-    (* set_color blue; *)
-    (* draw_poly_line [|(x_offset, y_offset)|]; *)
+    fill_rect (x_offset + 20) (y_offset - box_height - 20) 760 40; (* bottom rounded corners*)
     words (y_offset - 40) lst;
     synchronize ()
   end else ()
