@@ -46,8 +46,74 @@ let tree =
     Tr.empty
 
 (**[string_to_char_list str] is the char list form a string*)
+(**Functions taken from dict.ml*)
+exception File_not_found of string
+let create_lines_list file_name =
+  try
+    let lines_enum = BatFile.lines_of file_name in
+    let lines_list = BatList.of_enum lines_enum in
+    lines_list
+  with Sys_error _ ->
+    raise (File_not_found ("[" ^ file_name ^ "] does not exist."))
+
+let rec fill_dictionary lines_list dict =
+  match lines_list with
+  | [] -> dict
+  | h :: t -> h :: fill_dictionary t dict
+
+let create_dict file_name dict =
+  fill_dictionary (create_lines_list file_name) dict
+let dict_list = create_dict "data/COMMON.TXT" []
+
+(**[insert_all lis t] inserts all words in lis into a t*)
+let rec insert_all word_list tree =
+  match word_list with
+  | [] -> tree
+  | h :: t ->
+      let new_tree = Tr.insert (Tr.to_char_list h) tree in
+      insert_all t new_tree
+let tree2 = insert_all dict_list Tr.empty
+(*test tree I am using for the prototype*)
+let tree =
+  insert_all
+    [
+      "apple";
+      "aprle";
+      "appol";
+      "appla";
+      "apole";
+      "bapple";
+      "barple";
+      "triangle";
+    ]
+    Tr.empty
+
+(**[string_to_char_list str] is the char list form a string*)
 let string_to_char_list str = List.of_seq (String.to_seq str)
 
+(**[blend_color alpha bg fg] blends together color bg and fg according to alpha*)
+let blend_color alpha bg fg =
+  let r1 = (bg lsr 16) land 0xFF in
+  (* Extract red component from bg *)
+  let g1 = (bg lsr 8) land 0xFF in
+  (* Extract green component from bg *)
+  let b1 = bg land 0xFF in
+
+  (* Extract blue component from bg *)
+  let r2 = (fg lsr 16) land 0xFF in
+  (* Extract red component from fg *)
+  let g2 = (fg lsr 8) land 0xFF in
+  (* Extract green component from fg *)
+  let b2 = fg land 0xFF in
+
+  (* Extract blue component from fg *)
+  let blend a c1 c2 =
+    int_of_float ((a *. float c2) +. ((1. -. a) *. float c1))
+  in
+
+  rgb (blend alpha r1 r2) (blend alpha g1 g2) (blend alpha b1 b2)
+
+  (**[bubble st ed] draws the search bar bubble*)
 (**[blend_color alpha bg fg] blends together color bg and fg according to alpha*)
 let blend_color alpha bg fg =
   let r1 = (bg lsr 16) land 0xFF in
@@ -151,14 +217,38 @@ let rec turn_char_to_string acc =
     turn_char_to_string accum
 
 (**[string_lis_to_string lis] is a string of a string list*)
+(**[string_lis_to_string lis] is a string of a string list*)
 let string_lis_to_string lis = String.concat "" lis
 
+(**[turn_char_to_string_lis trie] is a list of the suggestions for a key pressed *)
 (**[turn_char_to_string_lis trie] is a list of the suggestions for a key pressed *)
 let turn_char_to_string_lis trie =
   let c = read_key () in
   let char_lis = c :: [] in
   Tr.search char_lis trie
 
+  (**[autofill word_accum suggestions] rest of the word to be filled by the suggestion*)
+let autofill word_accum suggestions =
+  let suggestion = List.nth suggestions 0 in
+  String.sub suggestion (String.length word_accum)
+    (String.length suggestion - String.length word_accum)
+
+(** [print_autofill rest_of_word x_int y_int color] prints the autofilled word from suggestions*)
+let rec print_autofill rest_of_word x_int y_int color =
+  let bg = rgb 229 228 226 in
+  let fg = color in
+  let col = blend_color 0.4 bg fg in
+  let count = x_int + 7 in
+  set_color col;
+  moveto count y_int;
+  draw_string (String.make 1 rest_of_word.[0]);
+  if String.length rest_of_word > 1 then
+    print_autofill
+      (String.sub rest_of_word 1 (String.length rest_of_word - 1))
+      count y_int color
+  else ()
+
+(**[basic_window ()] creates a blank GUI*)
   (**[autofill word_accum suggestions] rest of the word to be filled by the suggestion*)
 let autofill word_accum suggestions =
   let suggestion = List.nth suggestions 0 in
@@ -190,6 +280,7 @@ let basic_window () =
 
   set_text_size 500;
 
+  let title = "" in
   let title = "" in
   set_text_size 100;
   set_color blue;
