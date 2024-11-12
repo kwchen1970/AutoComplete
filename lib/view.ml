@@ -1,26 +1,17 @@
 open Graphics
 include Tree.Trie
 module Tr = Trie
+include Tree.Dict
 
 type t = Tr.t
-(**Functions taken from dict.ml*)
-exception File_not_found of string
-let create_lines_list file_name =
-  try
-    let lines_enum = BatFile.lines_of file_name in
-    let lines_list = BatList.of_enum lines_enum in
-    lines_list
-  with Sys_error _ ->
-    raise (File_not_found ("[" ^ file_name ^ "] does not exist."))
-
-let rec fill_dictionary lines_list dict =
-  match lines_list with
-  | [] -> dict
-  | h :: t -> h :: fill_dictionary t dict
-
-let create_dict file_name dict =
-  fill_dictionary (create_lines_list file_name) dict
-let dict_list = create_dict "data/COMMON.TXT" []
+let rec insert_all word_list tree =
+  match word_list with
+  | [] -> tree
+  | h :: t ->
+      let new_tree = Trie.insert (Trie.to_char_list h) tree in
+      insert_all t new_tree
+let word_dict = create_dict "data/COMMON.TXT" [] 
+let word_tree = insert_all word_dict Tr.empty
 
 (**[insert_all lis t] inserts all words in lis into a t*)
 let rec insert_all word_list tree =
@@ -29,7 +20,7 @@ let rec insert_all word_list tree =
   | h :: t ->
       let new_tree = Tr.insert (Tr.to_char_list h) tree in
       insert_all t new_tree
-let tree2 = insert_all dict_list Tr.empty
+
 (*test tree I am using for the prototype*)
 let tree =
   insert_all
@@ -73,10 +64,15 @@ let blend_color alpha bg fg =
   (**[bubble st ed] draws the search bar bubble*)
 let rec bubble (st : int) (ed : int) () =
   set_color (rgb 229 228 226);
-
   fill_circle st 540 20;
   fill_circle ed 540 20;
   fill_rect st 520 (ed - st) 40
+
+let center_pad width height = 
+  let x = (1920 - width) / 2 in
+  let y = (1080 - height) / 2 in
+  set_color (rgb 229 228 226);
+  fill_rect x y width height
 
 (**[no_suggest] clears the suggestions on the GUI*)
 let no_suggest () =
@@ -171,7 +167,7 @@ let rec print_autofill rest_of_word x_int y_int color =
 (**[basic_window ()] creates a blank GUI*)
 let basic_window () =
   open_graph " 1920x1080";
-  bubble 80 1280 ();
+  center_pad 800 800;
   set_color white;
   set_window_title "Auto_Complete";
 
@@ -191,8 +187,8 @@ let start_text () =
   let title = "Type Here:  " in
   set_text_size 100;
   set_color red;
-  let x = 80 in
-  let y = 540 in
+  let x = 570 in
+  let y = 875 in
   moveto x y;
   draw_string title
 
@@ -201,7 +197,7 @@ let rec accumulate_and_display acc =
   let c = read_key () in
   let updated_acc = acc ^ String.make 1 c in
 
-  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree2 in
+  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
   if c = ' ' then (
     print_suggestions1 suggestions;
     accumulate_and_display "")
@@ -217,6 +213,8 @@ let print_word word x_int y_int =
 
 (**[print_to_screen accum x_int y_int counter] prints the suggestions and present typing to screen*)
 let rec print_to_screen accum x_int y_int counter =
+  let max_x_bound = 1300 in 
+  let line_height = 20 in 
   synchronize ();
   (* Get the current character input *)
   let old_suggestions = Tr.search (string_to_char_list accum) tree in
@@ -230,6 +228,18 @@ let rec print_to_screen accum x_int y_int counter =
       let count = x_int + (7 * String.length rest_of_word) in
       print_to_screen "" count y_int (count + 4))
     else ()
+  else if c = '\x08' then 
+    if String.length accum >0 then 
+      let new_accum = String.sub accum 0 (String.length accum -1) in
+      let new_x_in = x_int -7 in 
+      moveto new_x_in y_int;
+      set_color white;
+      draw_string " ";
+      set_color black;
+      moveto new_x_in y_int;
+      draw_string new_accum;
+      print_to_screen new_accum new_x_in y_int (new_x_in + 4)
+    else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
     print_autofill rest_of_word x_int y_int (rgb 229 228 226)
@@ -241,12 +251,13 @@ let rec print_to_screen accum x_int y_int counter =
 
   if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
 
+  let count, y_offset= 
+  if x_int >= max_x_bound then 
+    (580, y_int - line_height)
+  else
+  (x_int + 7, y_int) in
   (* Display the current typed characters *)
   set_color black;
-  let x_offset = x_int in
-  let y_offset = y_int in
-
-  let count = x_offset + 7 in
   moveto count y_offset;
   if String.length new_accum > 0 then
     let () =
