@@ -1,0 +1,337 @@
+commit 11e063ab7c46d029f47ca02b0eaffba1d3465158
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Tue Oct 29 23:00:05 2024 -0400
+
+    Image files added and attempted use full dictionary
+
+commit 3a5ea0cf843decfb795d4681e99474de44968950
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Tue Oct 29 22:41:00 2024 -0400
+
+    Added image to GUI
+
+commit c97e9c1a7f51db2091d53a29188ec753b683bc25
+Merge: e42a1a0 82583e5
+Author: xt73 <xt73@cornell.edu>
+Date:   Tue Oct 29 12:39:24 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+
+commit e42a1a053f490e992188508f15441fb9a368882d
+Author: xt73 <xt73@cornell.edu>
+Date:   Tue Oct 29 12:37:49 2024 -0400
+
+    lib/dune
+
+commit 82583e55d62dfb95d10c0e36261c0a727707e4a8
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Mon Oct 28 23:53:48 2024 -0400
+
+    Added Documentation attempted ppm image reading
+
+commit 55289f46f2da53e51fb8a3f59e6ac6d984adc1d6
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Mon Oct 28 12:28:27 2024 -0400
+
+    Updated the implementation of Ngram Collection module with Priority Queues (Heap)
+    
+    - changed implementation of add_ngram, update_ngram, get_suggestion
+    - added function get_top_suggestion
+
+commit 29d407f0f9c8552e696ef2911ad6036cb07496b0
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sun Oct 27 17:49:18 2024 -0400
+
+    Implemented transparent text function
+
+commit c74cca4ced94218a3e827a48b90d0eaf132d7e26
+Merge: b7abeab f7ae23d
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sun Oct 27 15:36:54 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+
+commit b7abeabfcd4bba9a3ea68c30ed1e525495c2e328
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sun Oct 27 15:31:22 2024 -0400
+
+    backspace updates suggestions
+
+commit f7ae23de969864cf0e717cf108b2013e053818fe
+Author: Ivy Zhou <zz768@cornell.edu>
+Date:   Sun Oct 27 15:15:33 2024 -0400
+
+    Implemented autofill
+
+commit 9d6217f3f0eb911bac15698b6800081fa80de701
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sat Oct 26 14:52:17 2024 -0400
+
+    fixed first letter spacing
+
+commit 62c83a694779c6a8da377e53f604002864a23a67
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sat Oct 26 14:41:36 2024 -0400
+
+    fixed the overlapping text spacing
+
+commit d82a2a90296f5dbcfc7a0405b52880ae3968a3e0
+Author: Ivy Zhou <zz768@cornell.edu>
+Date:   Sat Oct 26 05:03:52 2024 -0400
+
+    Fixed overlap but now there are extra spaces between some words.
+
+commit a7875c0351b0f908d72a1cece0ae0e39ada01d67
+Author: Ivy Zhou <zz768@cornell.edu>
+Date:   Sat Oct 26 04:33:52 2024 -0400
+
+    Fixed initial overlapping after typing each new character. Implemented printing the suggestion the user chooses. Overlapped words between chosen word and new typed words.
+
+commit 9dbefef4b529e6baead61800b08c971855bb81fb
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sat Oct 26 02:14:54 2024 -0400
+
+    Updated view
+
+commit 8b1638121011f54efbd568ef5d71d8f10d750daf
+Merge: 2409f8c 4897d96
+Author: xt73 <xt73@cornell.edu>
+Date:   Fri Oct 25 12:26:57 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+    Merging
+
+commit 2409f8c4e6d94c5144cb7cee92729521fdde7787
+Author: xt73 <xt73@cornell.edu>
+Date:   Fri Oct 25 12:26:28 2024 -0400
+
+    Added "try with" to [search] in [trie.ml]
+
+commit 4897d96aab1decd5ffd88a3608d9df845a31504c
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Fri Oct 25 02:45:10 2024 -0400
+
+    Working on view functionality and GUI. Overlapped words
+
+commit 9cf1b2a9d990bba211ef365335edd927fd336f00
+Author: xt73 <xt73@cornell.edu>
+Date:   Fri Oct 25 01:54:35 2024 -0400
+
+    Test cases on spaces, loading in dictionaries
+
+commit 7f1e57100b03e80d98c44e62e74f12a4a341c5a0
+Merge: 92cd512 52cfa40
+Author: xt73 <xt73@cornell.edu>
+Date:   Fri Oct 25 00:03:55 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+
+commit 92cd5129310aef1aaba850c265e708f2c4b10721
+Author: xt73 <xt73@cornell.edu>
+Date:   Fri Oct 25 00:01:12 2024 -0400
+
+    Fixed Trie implementation in [trie.ml] so non-leaf words are recognized and words have priority
+
+commit 52cfa40ab3214fc047f0b9935060cb6388bf1d39
+Merge: 53ee310 361dc5d
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Thu Oct 24 23:31:34 2024 -0400
+
+    Merge remote-tracking branch 'refs/remotes/origin/main'
+
+commit 53ee3105157609574a1ccce73e730545af9623b3
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Thu Oct 24 23:31:15 2024 -0400
+
+    Implemented Tester for NgramColl
+    
+    - Implemented tester for add
+
+commit 361dc5dc23e6c9bf4b57fd43092ab83e79d36a3b
+Merge: e31fea4 fdb72a0
+Author: xt73 <xt73@cornell.edu>
+Date:   Thu Oct 24 22:31:51 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+
+commit e31fea41c54d5c174dd80193ac2c4232a0283f2f
+Author: xt73 <xt73@cornell.edu>
+Date:   Thu Oct 24 22:30:05 2024 -0400
+
+    view
+
+commit 876de82481835a012f91feaf0538f0c0d3e065f9
+Author: xt73 <xt73@cornell.edu>
+Date:   Thu Oct 24 22:26:52 2024 -0400
+
+    Tree/dune
+
+commit fdb72a0a74605649a5bbc38221e77d5ec2368425
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 22:24:47 2024 -0400
+
+    changed merge issues
+
+commit f0ecc3b01ddb6b0210349b76d8271fd010e28bce
+Merge: 545ef58 d9362f5
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 22:23:15 2024 -0400
+
+    Merge branch 'main' of github.coecis.cornell.edu:kc994/cs3110-final-project
+
+commit 545ef58417815b62f95bb42db8d2b0f9c09ab360
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 22:17:58 2024 -0400
+
+    Implemented some suggestion functions
+
+commit d9362f55aff2c7aa6f98acbdf3585d9881fc2111
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Thu Oct 24 22:03:26 2024 -0400
+
+    Added INSTALL.md
+    
+    - included graphics in INSTALL.md
+
+commit c042db9086498dec9ebb0c93933bf8f25892fb0e
+Merge: a12180d b03b8c5
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Thu Oct 24 21:42:54 2024 -0400
+
+    Merge remote-tracking branch 'refs/remotes/origin/main'
+
+commit a12180d4c2f9080d704e5d8634ac01f22503a170
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Thu Oct 24 21:41:29 2024 -0400
+
+    Implemented module NgramCollection
+    
+    - Implemented basic functionalities (add, search, update, get suggested words)
+    - TODO: use better data structure for suggested words (heap / priority queues)
+
+commit b03b8c58a3a76dc789020e8afcac617139f470a8
+Author: xt73 <xt73@cornell.edu>
+Date:   Thu Oct 24 21:41:11 2024 -0400
+
+    Moved Trie tree implementation into a new library [Tree]
+
+commit e4935d4f30fee557feca7e1035edfcb7bbd29e94
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 20:21:01 2024 -0400
+
+    Implemented word printing
+
+commit ae90c2a067e931cc91968e0e80d92334faff0e4e
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 18:54:22 2024 -0400
+
+    trying to make text bigger
+
+commit 44f8a5271ed580c485362dfe01adab814b8acaba
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 18:16:10 2024 -0400
+
+    Initial view implemented black screen
+
+commit 678725a9d48f8effbf3d98adc7590bd586c2f852
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Thu Oct 24 17:28:38 2024 -0400
+
+    Added view files
+
+commit 9e0b9a125450d7c02ba5a49c9cc30dffc09c9b16
+Author: xt73 <xt73@cornell.edu>
+Date:   Wed Oct 23 02:56:57 2024 -0400
+
+    Fixed edge case where if prefix = word, [search] doesn't return word.
+
+commit 53a2f300005994f443d596713246aa8f6ba2c17f
+Author: xt73 <xt73@cornell.edu>
+Date:   Wed Oct 23 02:41:20 2024 -0400
+
+    Deleted [trie.mli].
+
+commit 51a78a3082a23c9139399b356a7420422b1192e8
+Author: xt73 <xt73@cornell.edu>
+Date:   Wed Oct 23 02:41:03 2024 -0400
+
+    Implemented functorized test suite [TrieTester] for [Trie].
+
+commit d5f3e2a617b3e57a42764d6492011ed563555579
+Author: xt73 <xt73@cornell.edu>
+Date:   Wed Oct 23 02:40:38 2024 -0400
+
+    Replaced compilation unit [trie.mli] by defining module [Trie] and module type [TRIE] in [trie.ml]
+
+commit 5cc48c5dedfe6d8476c4094c93a345f3160bb48d
+Author: xt73 <xt73@cornell.edu>
+Date:   Tue Oct 22 12:25:05 2024 -0400
+
+    Deleted traces and added more elements to Trie tree to test
+
+commit a04ebe2728322b20b7879276147cca090e135e6d
+Author: xt73 <xt73@cornell.edu>
+Date:   Tue Oct 22 00:21:01 2024 -0400
+
+    [search] can now get all leaves that match the given prefix.
+
+commit 0690bcf385e9bbe60b4c61ed689c1e6d921bf368
+Author: xt73 <xt73@cornell.edu>
+Date:   Sat Oct 19 02:59:04 2024 -0400
+
+    Implemented [insert] and [search] for Trie trees
+
+commit 4eb7ca53a8944416ad43fe580de9214bcb240604
+Author: sophtsang <sophiatsang19@gmail.com>
+Date:   Wed Oct 16 19:12:49 2024 -0400
+
+    I figured out dune build and how to make docstring!
+
+commit f2dd6fc95f0db26de11e4723dbbf1c8e032e7913
+Author: sophtsang <sophiatsang19@gmail.com>
+Date:   Wed Oct 16 18:45:49 2024 -0400
+
+    Initial commit for trie.ml.
+
+commit afe27d7533ecf3fc31b646fce1ec889588eb21c5
+Author: Ivy Zhou <zz768@cornell.edu>
+Date:   Tue Oct 8 22:53:02 2024 -0400
+
+    Update README.md
+
+commit 932f09fe4454ce9e9d1a5b15ed1ecfc511674768
+Author: mz546 <18431+mz546@users.noreply.github.coecis.cornell.edu>
+Date:   Tue Oct 8 22:11:59 2024 -0400
+
+    Update README.md
+
+commit 2992a269c01e060c1a78cc12ce20f616220db402
+Author: Xueqing Tsang <xt73@cornell.edu>
+Date:   Tue Oct 8 21:52:08 2024 -0400
+
+    Update README.md
+
+commit 8530fd7d68b2ffdab5c3b7df1d8e33c5d11cd1ef
+Author: kc994 <kc994@cornell.edu>
+Date:   Tue Oct 8 21:29:47 2024 -0400
+
+    updated readme from Kathy Chen kc994
+
+commit a468a75619325337902b59d1e83f3426442f46c7
+Author: Sabrina <sl2222@cornell.edu>
+Date:   Sat Oct 5 14:07:29 2024 -0400
+
+    Sabrina's initial commit
+    - Added name & NetID to README
+
+commit ee0df88c5965b6364ba4ab288da5f73e53915fb0
+Author: kc994 <kc994@cornell.edu>
+Date:   Sat Oct 5 11:12:05 2024 -0400
+
+    Created a read me
+
+commit 9011058ff15e507bc3c77eb30c4b4176b58e238e
+Author: Kathy Chen <kc994@cornell.edu>
+Date:   Sat Oct 5 11:02:56 2024 -0400
+
+    Initial commit

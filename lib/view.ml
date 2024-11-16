@@ -4,13 +4,15 @@ module Tr = Trie
 include Tree.Dict
 
 type t = Tr.t
+
 let rec insert_all word_list tree =
   match word_list with
   | [] -> tree
   | h :: t ->
       let new_tree = Trie.insert (Trie.to_char_list h) tree in
       insert_all t new_tree
-let word_dict = create_dict "data/COMMON.TXT" [] 
+
+let word_dict = create_dict "data/COMMON.TXT" []
 let word_tree = insert_all word_dict Tr.empty
 
 (**[insert_all lis t] inserts all words in lis into a t*)
@@ -61,49 +63,53 @@ let blend_color alpha bg fg =
 
   rgb (blend alpha r1 r2) (blend alpha g1 g2) (blend alpha b1 b2)
 
-  (**[bubble st ed] draws the search bar bubble*)
+(**[bubble st ed] draws the search bar bubble*)
 let rec bubble (st : int) (ed : int) () =
   set_color (rgb 229 228 226);
   fill_circle st 540 20;
   fill_circle ed 540 20;
   fill_rect st 520 (ed - st) 40
 
-let center_pad width height = 
+let center_pad width height =
   let x = (1920 - width) / 2 in
   let y = (1080 - height) / 2 in
   set_color (rgb 229 228 226);
   fill_rect x y width height
 
 (**[no_suggest] clears the suggestions on the GUI*)
-let no_suggest () =
+let no_suggest x_off y_off =
+  (* set_color (rgb 0 228 0); *)
   set_color (rgb 229 228 226);
   (* Pure white color *)
   fill_rect
-    ((size_x () / 3) - 125) (* Same X-offset as print_suggestions1 *)
-    (490 - 200) (* Ensure it covers the max vertical space *)
-    800 (* Width matching print_suggestions1 *)
+    (x_off - 15) (* Same X-offset as print_suggestions1 *)
+    (y_off - 250) (* Ensure it covers the max vertical space *)
+    250 (* Width matching print_suggestions1 *)
     240
 
 (**[words pos_y] prints the words in a vertical list*)
-let rec words pos_y = function
+let rec words x_off pos_y = function
   | [] -> ()
   | h :: t ->
-      set_color black;
-      moveto (size_x () / 3) pos_y;
+      set_color blue;
+      moveto x_off pos_y;
       draw_string h;
-      words (pos_y - 40) t
+      words x_off (pos_y - 40) t
 
 (**[print_suggestions1 lst] words from lst onto a grey suggestion box*)
-let print_suggestions1 lst =
-  let x_offset = (size_x () / 3) - 125 in
-  let y_offset = 500 in
-  let box_height = (List.length lst * 40) + 20 in
+let print_suggestions1 lst x_off y_off x_off_word =
+  (* set_color (rgb 229 0 0); *)
   set_color (rgb 229 228 226);
-  fill_rect x_offset (y_offset - box_height) 800 box_height;
-  words (y_offset - 40) lst;
+  (* Pure white color *)
+  fill_rect x_off_word (* Same X-offset as print_suggestions1 *)
+    (y_off - 250) (* Ensure it covers the max vertical space *)
+    250 (* Width matching print_suggestions1 *)
+    240;
+  words (x_off_word + 11) (y_off - 25) lst;
   synchronize ()
 
-(**[is_inside (x,y) (rect_x, rect_y) width height] is whether x,y is in rect_x,rect_y*)
+(**[is_inside (x,y) (rect_x, rect_y) width height] is whether x,y is in
+   rect_x,rect_y*)
 let is_inside (x, y) (rect_x, rect_y) width height =
   x >= rect_x && x <= rect_x + width && y >= rect_y && y <= rect_y + height
 
@@ -143,13 +149,15 @@ let turn_char_to_string_lis trie =
   let char_lis = c :: [] in
   Tr.search char_lis trie
 
-  (**[autofill word_accum suggestions] rest of the word to be filled by the suggestion*)
+(**[autofill word_accum suggestions] rest of the word to be filled by the
+   suggestion*)
 let autofill word_accum suggestions =
   let suggestion = List.nth suggestions 0 in
   String.sub suggestion (String.length word_accum)
     (String.length suggestion - String.length word_accum)
 
-(** [print_autofill rest_of_word x_int y_int color] prints the autofilled word from suggestions*)
+(** [print_autofill rest_of_word x_int y_int color] prints the autofilled word
+    from suggestions*)
 let rec print_autofill rest_of_word x_int y_int color =
   let bg = rgb 229 228 226 in
   let fg = color in
@@ -192,29 +200,25 @@ let start_text () =
   moveto x y;
   draw_string title
 
-(**[accumulate_and_display acc] accumulates keys pressed and prints suggestions to screen*)
-let rec accumulate_and_display acc =
+(**[accumulate_and_display acc] accumulates keys pressed and prints suggestions
+   to screen*)
+let rec accumulate_and_display acc x_off y_off x_off_word =
   let c = read_key () in
   let updated_acc = acc ^ String.make 1 c in
 
   let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
   if c = ' ' then (
-    print_suggestions1 suggestions;
-    accumulate_and_display "")
+    print_suggestions1 suggestions x_off y_off x_off_word;
+    accumulate_and_display "" x_off y_off x_off_word)
   else (
-    print_suggestions1 suggestions;
-    accumulate_and_display updated_acc)
-(**[print_word word x_int y_int] prints each word to a coordinate*)
-let print_word word x_int y_int =
-  let len = String.length word in
-  let nex_x = x_int + len + 1 in
-  moveto nex_x y_int;
-  draw_string word
+    print_suggestions1 suggestions x_off y_off x_off_word;
+    accumulate_and_display updated_acc x_off y_off x_off_word)
 
-(**[print_to_screen accum x_int y_int counter] prints the suggestions and present typing to screen*)
-let rec print_to_screen accum x_int y_int counter =
-  let max_x_bound = 1300 in 
-  let line_height = 20 in 
+(**[print_to_screen accum x_int y_int counter] prints the suggestions and
+   present typing to screen*)
+let rec print_to_screen accum x_int y_int counter x_off_word =
+  let max_x_bound = 1300 in
+  let line_height = 20 in
   synchronize ();
   (* Get the current character input *)
   let old_suggestions = Tr.search (string_to_char_list accum) tree in
@@ -226,19 +230,19 @@ let rec print_to_screen accum x_int y_int counter =
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" count y_int (count + 4))
+      print_to_screen "" count y_int (count + 4) x_off_word)
     else ()
-  else if c = '\x08' then 
-    if String.length accum >0 then 
-      let new_accum = String.sub accum 0 (String.length accum -1) in
-      let new_x_in = x_int -7 in 
+  else if c = '\x08' then
+    if String.length accum > 0 then (
+      let new_accum = String.sub accum 0 (String.length accum - 1) in
+      let new_x_in = x_int - 7 in
       moveto new_x_in y_int;
       set_color white;
       draw_string " ";
       set_color black;
       moveto new_x_in y_int;
       draw_string new_accum;
-      print_to_screen new_accum new_x_in y_int (new_x_in + 4)
+      print_to_screen new_accum new_x_in y_int (new_x_in + 4) x_off_word)
     else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
@@ -247,15 +251,22 @@ let rec print_to_screen accum x_int y_int counter =
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
   let suggestions = Tr.search (string_to_char_list new_accum) tree in
-  if c = ' ' then no_suggest () else print_suggestions1 suggestions;
-
-  if new_accum = "" then no_suggest () else print_suggestions1 suggestions;
-
-  let count, y_offset= 
-  if x_int >= max_x_bound then 
-    (580, y_int - line_height)
-  else
-  (x_int + 7, y_int) in
+  if c = ' ' then
+    if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
+    else no_suggest x_int y_int
+  else print_suggestions1 suggestions x_int y_int x_off_word;
+  if (580 < x_int && x_int < 590) && y_int < 855 then (
+    (* set_color (rgb 0 0 224); *)
+    set_color (rgb 229 228 226);
+    fill_rect
+      (max_x_bound - 190) (* Same X-offset as print_suggestions1 *)
+      (y_int - 230) (* Ensure it covers the max vertical space *)
+      250 (* Width matching print_suggestions1 *)
+      240);
+  let count, y_offset =
+    if x_int >= max_x_bound then (580, y_int - line_height)
+    else (x_int + 7, y_int)
+  in
   (* Display the current typed characters *)
   set_color black;
   moveto count y_offset;
@@ -270,61 +281,70 @@ let rec print_to_screen accum x_int y_int counter =
   else draw_string " ";
 
   (* Call the function recursively with the new accumulator *)
-  print_to_screen new_accum count y_offset (count + 4)
-
-  (**functions to read a ppm file to display a image*)
-
-  (**[skip_comments ic] doesn't read comments in a ppm file in the returned string*)
-  let skip_comments ic =
-    let rec aux () =
-      let line = input_line ic in
-      if String.length line > 0 && String.get line 0 = '#' then
-        aux ()  (* Skip comment lines *)
-      else
-        line
+  if c = ' ' then
+    let x_off_word =
+      if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
     in
-    aux ()
-    
-    (**[load_ppm filename] turns the ppm into a image on screen*)
-    let load_ppm filename =
-      let ic = open_in filename in
-      (* Read the magic number (P3) *)
-      let magic_number = input_line ic in
-      if magic_number <> "P3" then failwith "Unsupported PPM format";
-    
-      (* Skip comments and read width, height *)
-      let line = skip_comments ic in
-      let (width, height) = Scanf.sscanf line "%d %d" (fun w h -> (w, h)) in
-    
-      (* Read the max color value (usually 255) *)
-      let _ = input_line ic in  (* We can ignore it *)
-    
-      (* Read all pixel data *)
-      let pixel_data = ref [] in
-        try while true do
-          let value = input_line ic in
-          pixel_data := value :: !pixel_data
-        done with End_of_file -> ();
-     
-    
-      (* Check if we have enough values *)
-      let total_pixels = width * height * 3 in
-      if List.length !pixel_data < total_pixels then
-        failwith "Not enough pixel values in the file";
-    
-      (* Read pixel data and plot each pixel *)
-      let rec read_pixel index =
-        if index >= total_pixels then () (* End of pixel data *)
-        else
-          let r = int_of_string (List.nth !pixel_data index) in
-          let g = int_of_string (List.nth !pixel_data (index + 1)) in
-          let b = int_of_string (List.nth !pixel_data (index + 2)) in
-          let color = Graphics.rgb r g b in
-          Graphics.set_color color;            (* Set the color first *)
-          Graphics.plot (index mod width) (height - (index / width) - 1);
-          read_pixel (index + 3)
-      in
-    
-      read_pixel 0;
-    
-      close_in ic
+    print_to_screen new_accum count y_offset (count + 4) x_off_word
+  else print_to_screen new_accum count y_offset (count + 4) x_off_word
+
+(**functions to read a ppm file to display a image*)
+
+(**[skip_comments ic] doesn't read comments in a ppm file in the returned string*)
+let skip_comments ic =
+  let rec aux () =
+    let line = input_line ic in
+    if String.length line > 0 && String.get line 0 = '#' then
+      aux () (* Skip comment lines *)
+    else line
+  in
+  aux ()
+
+(**[load_ppm filename] turns the ppm into a image on screen*)
+let load_ppm filename =
+  let ic = open_in filename in
+  (* Read the magic number (P3) *)
+  let magic_number = input_line ic in
+  if magic_number <> "P3" then failwith "Unsupported PPM format";
+
+  (* Skip comments and read width, height *)
+  let line = skip_comments ic in
+  let width, height = Scanf.sscanf line "%d %d" (fun w h -> (w, h)) in
+
+  (* Read the max color value (usually 255) *)
+  let _ = input_line ic in
+
+  (* We can ignore it *)
+
+  (* Read all pixel data *)
+  let pixel_data = ref [] in
+  try
+    while true do
+      let value = input_line ic in
+      pixel_data := value :: !pixel_data
+    done
+  with End_of_file ->
+    ();
+
+    (* Check if we have enough values *)
+    let total_pixels = width * height * 3 in
+    if List.length !pixel_data < total_pixels then
+      failwith "Not enough pixel values in the file";
+
+    (* Read pixel data and plot each pixel *)
+    let rec read_pixel index =
+      if index >= total_pixels then () (* End of pixel data *)
+      else
+        let r = int_of_string (List.nth !pixel_data index) in
+        let g = int_of_string (List.nth !pixel_data (index + 1)) in
+        let b = int_of_string (List.nth !pixel_data (index + 2)) in
+        let color = Graphics.rgb r g b in
+        Graphics.set_color color;
+        (* Set the color first *)
+        Graphics.plot (index mod width) (height - (index / width) - 1);
+        read_pixel (index + 3)
+    in
+
+    read_pixel 0;
+
+    close_in ic
