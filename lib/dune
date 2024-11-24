@@ -1,3 +1,4 @@
 (library
  (name group_proj)
- (libraries str graphics core_kernel.pairing_heap tree))
+ (libraries str graphics core_kernel.pairing_heap tree lwt.unix cohttp-lwt-unix yojson)
+ (preprocess (pps lwt_ppx)))

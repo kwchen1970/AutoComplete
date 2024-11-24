@@ -81,7 +81,7 @@ let center_pad width height =
 (**[no_suggest] clears the suggestions on the GUI*)
 let no_suggest x_off y_off =
   (* set_color (rgb 0 228 0); *)
-  set_color (rgb 229 228 226);
+  set_color (rgb 0 228 0);
   (* Pure white color *)
   fill_rect
     (x_off - 15) (* Same X-offset as print_suggestions1 *)
@@ -100,8 +100,8 @@ let rec words x_off pos_y = function
 
 (**[print_suggestions1 lst] words from lst onto a grey suggestion box*)
 let print_suggestions1 lst x_off y_off x_off_word =
-  (* set_color (rgb 229 0 0); *)
-  set_color (rgb 229 228 226);
+  set_color (rgb 229 0 0);
+  (* set_color (rgb 229 228 226); *)
   (* Pure white color *)
   fill_rect x_off_word (* Same X-offset as print_suggestions1 *)
     (y_off - 250) (* Ensure it covers the max vertical space *)
@@ -298,7 +298,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
+    print_autofill rest_of_word x_int y_int black
   else ();
   if c <> '\x08' && c <> '\027' then
     Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
@@ -336,7 +336,8 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     in
     if List.length suggestions > 0 then
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset (rgb 120 99 97)
+      print_autofill rest_of_word count y_offset (rgb 120 99 97) print_autofill
+        rest_of_word count y_offset (rgb 120 99 97)
     else ()
   else draw_string " ";
 
