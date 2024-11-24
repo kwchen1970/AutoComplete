@@ -161,7 +161,15 @@ module Trie : TRIE = struct
               (* [last_visited] is the Node where key = last character in
                  [prefix_list] *)
               last_visited := (!last_prefix, Node (is_word, priority, tree));
-              if is_empty (Node (is_word, priority, tree)) then []
+              if is_empty (Node (is_word, priority, tree)) then
+                if is_word then [ prefix ] else []
+              else if is_word then (
+                let cmp (k1, p1) (k2, p2) = p1 - p2 in
+                pqueue :=
+                  Rbtree.insert
+                    (prefix, Hashtbl.find !priorities prefix)
+                    !pqueue cmp;
+                prefix :: search_all (Node (is_word, priority, tree)))
               else search_all (Node (is_word, priority, tree))
           | h :: t ->
               let prefix = prefix ^ String.make 1 h in
@@ -174,20 +182,29 @@ module Trie : TRIE = struct
           (fun (k, p) -> k)
           (List.flatten (Rbtree.inorder_traversal !pqueue))
       in
+      print_endline
+        (List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" full_list);
       let rec sub_list full_list n =
         match (n, full_list) with
         | 0, _ -> []
         | _, [] -> []
         | n, h :: t -> h :: sub_list t (n - 1)
       in
-      sub_list (List.rev full_list) 5
+      let sub_l = sub_list (List.rev full_list) 5 in
+      print_endline
+        ("SUBMISTL "
+        ^ List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" sub_l);
+      sub_l
     with Not_found -> []
 
   (* Recurse to the bottom of the tree, then continue making the nodes Empty
      until meet the next [is_word = true]. *)
   let remove word (Node (is_word, priority, tree) as trie) =
-    let prefix_list = to_char_list word in
     try
+      let cmp (k1, p1) (k2, p2) = p1 - p2 in
+      pqueue := Rbtree.remove (word, Hashtbl.find !priorities word) !pqueue cmp;
+      Hashtbl.remove !priorities word;
+      let prefix_list = to_char_list word in
       let rec remove_p prefix_list (Node (is_word, priority, tree)) prefix =
         match prefix_list with
         | [] ->

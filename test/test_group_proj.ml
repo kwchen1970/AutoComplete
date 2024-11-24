@@ -6,23 +6,6 @@ include Tree.Dict
 module TestTrie = Trie
 
 let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
-let tree = Trie.empty
-let tree = Trie.insert (Trie.to_char_list "app") tree
-let tree = Trie.insert (Trie.to_char_list "apple") tree
-let tree = Trie.insert (Trie.to_char_list "applre") tree
-let searched = Trie.search (Trie.to_char_list "a") tree
-let _ = print_endline (Trie.to_string tree)
-
-let _ =
-  print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" searched)
-
-let tree = Trie.remove "apple" tree
-let searched = Trie.search (Trie.to_char_list "a") tree
-let _ = print_endline (Trie.to_string tree)
-
-let _ =
-  print_endline
-    (List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" searched ^ " done \n")
 
 let rec print_str_list lst =
   match lst with
@@ -79,11 +62,16 @@ module TrieTester (T : TRIE) = struct
        from [word_list]. *)
     let leaves = search (to_char_list prefix) tree in
 
+    (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
+       leaves); *)
     assert_equal true (cmp leaves expected) ~printer:string_of_bool;
+
     (* Check if the length of [expected] = number of word leaves in the tree
        containing words from [word_list]. *)
     assert_equal true
-      (List.length expected >= List.length leaves)
+      (if List.length expected > 5 then
+         List.length expected >= List.length leaves
+       else List.length expected = List.length leaves)
       ~printer:string_of_bool
 
   let tree =
@@ -122,7 +110,6 @@ module TrieTester (T : TRIE) = struct
          refresh_priorities;
          insert_all word_lst empty
        in
-       let _ = print_endline (to_string word_tree) in
        let _ =
          refresh_priorities;
          make_insert_test word_lst word_lst
@@ -162,6 +149,7 @@ module TrieTester (T : TRIE) = struct
          ]
        in
        let word_tree = insert_all wood_dict empty in
+
        make_search_test wood_lst "wood " word_tree);
       (refresh_priorities;
        let wood_lst =
@@ -183,6 +171,34 @@ module TrieTester (T : TRIE) = struct
        let word_tree = insert_all wood_lst empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        make_search_test (List.rev wood_lst) "wood " word_tree);
+      (print_endline "APPLE TEST";
+       let tree = T.empty in
+       let tree = T.insert (T.to_char_list "app") tree in
+       let tree = T.insert (T.to_char_list "apple") tree in
+       let tree = T.insert (T.to_char_list "applre") tree in
+       let tree = T.remove "apple" tree in
+       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
+          (T.all_words tree)); *)
+       make_search_test [ "app"; "applre" ] "app" tree);
+      (let wood_lst =
+         [
+           "wood alcohol";
+           "wood anemone";
+           "wood anemone";
+           "wood\n         anemone";
+           "wood anemone";
+           "wood warbler";
+         ]
+       in
+       let word_tree = insert_all wood_lst empty in
+       let _ = make_search_test wood_lst "wood " word_tree in
+       let word_tree = T.remove "wood anemone" word_tree in
+       let word_tree = T.remove "wood" word_tree in
+       print_endline
+         (List.fold_left
+            (fun acc elem -> acc ^ " " ^ elem)
+            "" (T.all_words word_tree));
+       make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
 end
 

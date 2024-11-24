@@ -13,3 +13,17 @@
    Lwt_main.run (fetch_url url)
 
    Add synonym words into a hashmap. *)
+open Lwt
+open Lwt.Infix
+open Cohttp
+open Cohttp_lwt_unix
+
+let fetch_synonym word =
+  Client.get
+    (Uri.of_string ("https://www.merriam-webster.com/dictionary/" ^ word))
+  >>= fun (response, body) ->
+  Cohttp_lwt.Body.to_string body >>= fun body_string ->
+  Lwt_io.printf "Response body:\n%s\n" body_string
+
+(* Entry point of the program *)
+let () = Lwt_main.run (fetch_synonym "happy")
