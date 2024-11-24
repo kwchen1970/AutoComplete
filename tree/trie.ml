@@ -228,12 +228,12 @@ module Trie : TRIE = struct
     search_pairs pairs
 
   let search prefix_list (Node (is_word, priority, tree)) =
-    print_endline ("last visited was " ^ fst !last_visited);
+    (* print_endline ("last visited was " ^ fst !last_visited); *)
     last_prefix :=
       List.fold_left (fun acc elem -> acc ^ String.make 1 elem) "" prefix_list;
     try
       let rec search_p prefix_list (Node (is_word, priority, tree)) prefix =
-        print_endline ("prefix is " ^ !last_prefix);
+        (* print_endline ("prefix is " ^ !last_prefix); *)
         match prefix_list with
         | [] ->
             (* [last_visited] is the Node where key = last character in
@@ -248,7 +248,8 @@ module Trie : TRIE = struct
                (is_word, priority, tree)))); *)
             search_p t (StringMap.find prefix tree) prefix
       in
-      print_endline (string_of_bool (is_empty (Node (is_word, priority, tree))));
+      (* print_endline (string_of_bool (is_empty (Node (is_word, priority,
+         tree)))); *)
       search_p prefix_list (Node (is_word, priority, tree)) ""
     with Not_found -> []
 

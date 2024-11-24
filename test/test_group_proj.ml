@@ -10,10 +10,11 @@ let tree = Trie.insert (Trie.to_char_list "app") tree
 let tree = Trie.insert (Trie.to_char_list "apple") tree
 let tree = Trie.insert (Trie.to_char_list "applre") tree
 let searched = Trie.search (Trie.to_char_list "a") tree
-let _ = print_endline (fold_tree searched)
+
+(* let _ = print_endline (fold_tree searched) *)
 let last = snd !Trie.last_visited
 let searched1 = Trie.search (Trie.to_char_list "pple") last
-let _ = print_endline (fold_tree searched1)
+(* let _ = print_endline (fold_tree searched1) *)
 
 let rec print_str_list lst =
   match lst with

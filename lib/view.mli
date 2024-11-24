@@ -35,7 +35,8 @@ val is_inside : int * int -> int * int -> int -> int -> bool
 val find_chosen_suggestion : string list -> string option
 (** finds and draws the suggestion that the user clicked on *)
 
-val print_to_screen : string -> int -> int -> int -> int -> unit
+val print_to_screen : string ->
+  int -> int -> int -> int -> (int, string) Hashtbl.t -> int -> unit
 (**prints the typing and suggestions to screen*)
 val basic_window : unit -> unit
 (**generates blank window*)
