@@ -7,7 +7,7 @@ type 'a t =
   | Node of color * 'a * 'a t * 'a t
 
 val empty : 'a t
-val insert : 'a -> 'a t -> ('a -> 'a -> int) -> 'a t
+val insert : 'a -> 'a list t -> ('a -> 'a -> int) -> 'a list t
 val preorder_traversal : 'a t -> 'a list
 val inorder_traversal : 'a t -> 'a list
 val postorder_traversal : 'a t -> 'a list
