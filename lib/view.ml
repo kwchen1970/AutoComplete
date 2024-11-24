@@ -236,15 +236,6 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
   if c = '\027' then ()
-  else if c = '\008' then begin
-    set_color (rgb 229 228 226);
-    fill_rect x_int y_int 14 (line_height - 5);
-    let new_accum =
-      if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
-    in
-    print_to_screen new_accum (x_int -7) y_int counter x_off_word
-        accum_sent word_index
-  end
   else if c = '\t' && String.length accum > 0 then
     if List.length old_suggestions > 0 then (
       let rest_of_word = autofill accum old_suggestions in
@@ -253,11 +244,11 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
       print_to_screen "" count y_int (count + 4) x_off_word accum_sent
         word_index)
     else ()
-      
-
+  else if c = '\x08' then
+    ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int black
+    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
   else ();
   (**Add word to accum_sentence if it is complete.*)
   if (c <> '\x08' && c <> '\027') then Hashtbl.add accum_sent (word_index+1) (String.make 1 c)
@@ -292,7 +283,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     in
     if List.length suggestions > 0 then
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset (rgb 120 99 97)
+      print_autofill rest_of_word count y_offset red
     else ()
   else draw_string " ";
 
