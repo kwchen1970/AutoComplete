@@ -225,6 +225,14 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
   if c = '\027' then ()
+  else if c = '\008' then begin
+    set_color (rgb 229 228 226);
+    fill_rect x_int y_int 14 (line_height - 5);
+    let new_accum =
+      if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
+    in
+    print_to_screen new_accum (x_int - 7) y_int counter x_off_word
+  end
   else if c = '\t' && String.length accum > 0 then
     if List.length old_suggestions > 0 then (
       let rest_of_word = autofill accum old_suggestions in
@@ -232,21 +240,9 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
       let count = x_int + (7 * String.length rest_of_word) in
       print_to_screen "" count y_int (count + 4) x_off_word)
     else ()
-  else if c = '\x08' then
-    if String.length accum > 0 then (
-      let new_accum = String.sub accum 0 (String.length accum - 1) in
-      let new_x_in = x_int - 7 in
-      moveto new_x_in y_int;
-      set_color white;
-      draw_string " ";
-      set_color black;
-      moveto new_x_in y_int;
-      draw_string new_accum;
-      print_to_screen new_accum new_x_in y_int (new_x_in + 4) x_off_word)
-    else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
+    print_autofill rest_of_word x_int y_int black
   else ();
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
@@ -276,7 +272,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
     in
     if List.length suggestions > 0 then
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset red
+      print_autofill rest_of_word count y_offset (rgb 120 99 97)
     else ()
   else draw_string " ";
 
