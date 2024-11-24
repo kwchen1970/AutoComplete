@@ -18,11 +18,12 @@ let balance = function
 
 let rec insert_help x tree cmp =
   match tree with
-  | Leaf -> Node (Red, x, Leaf, Leaf)
+  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
   | Node (c, v, l, r) -> (
       let new_tree =
-        if cmp x v < 0 then Node (c, v, insert_help x l cmp, r)
-        else if cmp x v >= 0 then Node (c, v, l, insert_help x r cmp)
+        if cmp x (List.hd v) < 0 then Node (c, v, insert_help x l cmp, r)
+        else if cmp x (List.hd v) > 0 then Node (c, v, l, insert_help x r cmp)
+        else if cmp x (List.hd v) = 0 then Node (c, x :: v, l, r)
         else tree
       in
       match new_tree with
@@ -33,6 +34,26 @@ let insert x tree cmp =
   match insert_help x tree cmp with
   | Node (c, v, l, r) -> Node (Black, v, l, r)
   | _ -> tree
+
+let rec remove x tree cmp =
+  match tree with
+  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
+  | Node (c, v, l, r) -> (
+      let new_tree =
+        if cmp x (List.hd v) < 0 then Node (c, v, remove x l cmp, r)
+        else if cmp x (List.hd v) > 0 then Node (c, v, l, remove x r cmp)
+        else if cmp x (List.hd v) = 0 then
+          let rec remove_list x v =
+            match v with
+            | [] -> []
+            | h :: t -> if x = h then v else h :: remove_list x t
+          in
+          Node (c, remove_list x v, l, r)
+        else tree
+      in
+      match new_tree with
+      | Node (Black, v, l, r) -> balance (Black, v, l, r)
+      | _ -> new_tree)
 
 let string_of_color = function
   | Black -> "Black"
