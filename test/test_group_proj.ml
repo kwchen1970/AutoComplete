@@ -11,6 +11,7 @@ let tree = Trie.insert (Trie.to_char_list "app") tree
 let tree = Trie.insert (Trie.to_char_list "apple") tree
 let tree = Trie.insert (Trie.to_char_list "applre") tree
 let searched = Trie.search (Trie.to_char_list "a") tree
+<<<<<<< HEAD
 let _ = print_endline (Trie.to_string tree)
 
 let _ =
@@ -23,6 +24,13 @@ let _ = print_endline (Trie.to_string tree)
 let _ =
   print_endline
     (List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" searched ^ " done \n")
+=======
+
+(* let _ = print_endline (fold_tree searched) *)
+let last = snd !Trie.last_visited
+let searched1 = Trie.search (Trie.to_char_list "pple") last
+(* let _ = print_endline (fold_tree searched1) *)
+>>>>>>> 9ca659f5518c7a4f1df16d183e9405e954e8e235
 
 let rec print_str_list lst =
   match lst with
