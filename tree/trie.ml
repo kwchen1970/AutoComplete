@@ -16,7 +16,8 @@ module type TRIE = sig
   val empty : t
   (** [empty] is the empty Trie tree *)
 
-  val return_prior : unit -> (string, int) Hashtbl.t
+  val return_pqueue : unit -> (string * int) Rbtree.t
+  val pqueue_to_string : (string * int) Rbtree.t -> string
   val last_visited : (string * t) ref
   val last_prefix : string ref
   val to_char_list : string -> char list
@@ -65,7 +66,11 @@ module Trie : TRIE = struct
   (* Red-black tree that stores (priority, word) in order of smallest to
      greatest priority. *)
   let pqueue = ref Rbtree.empty
-  let return_prior () = priorities
+  let return_pqueue () = !pqueue
+
+  let pqueue_to_string pqueue =
+    Rbtree.to_string (fun (k, p) -> k ^ "[" ^ string_of_int p ^ "]") pqueue 0
+
   let last_visited = ref ("", empty)
   let last_prefix = ref ""
 
@@ -110,13 +115,20 @@ module Trie : TRIE = struct
     let word =
       List.fold_left (fun acc elem -> acc ^ String.make 1 elem) "" char_list
     in
+    print_endline word;
     let new_tree =
       match Hashtbl.find_opt priorities word with
-      | None -> insert_new char_list trie
+      | None ->
+          print_endline ("NONO: " ^ string_of_int (Hashtbl.length priorities));
+          insert_new char_list trie
       (* If [word] is already a key in [priorities], update the priority + 1. *)
       | Some b ->
-          Hashtbl.replace priorities word (Hashtbl.find priorities word + 1);
-          insert_new char_list trie
+          print_endline ("HERERE: " ^ string_of_int (Hashtbl.length priorities));
+          (* Hashtbl.replace priorities word (Hashtbl.find priorities word +
+             1); *)
+          print_endline (string_of_int (Hashtbl.length priorities));
+          trie
+      (* insert_new char_list trie *)
     in
     new_tree
 
@@ -140,35 +152,43 @@ module Trie : TRIE = struct
             if is_word then (key :: a) @ search_all (StringMap.find key tree)
             else a @ search_all (StringMap.find key tree)
           else
-            let _ = print_endline key in
+            (* Make larger priority on the left side of the tree. *)
+            let cmp (k1, p1) (k2, p2) = p2 - p1 in
+            pqueue :=
+              Rbtree.insert (key, Hashtbl.find priorities key) !pqueue cmp;
             key :: a
     in
     search_pairs pairs
 
   let search prefix_list (Node (is_word, priority, tree)) =
+    pqueue := Rbtree.empty;
     last_prefix :=
       List.fold_left (fun acc elem -> acc ^ String.make 1 elem) "" prefix_list;
     try
-      let rec search_p prefix_list (Node (is_word, priority, tree)) prefix =
-        match prefix_list with
-        | [] ->
-            (* [last_visited] is the Node where key = last character in
-               [prefix_list] *)
-            last_visited := (!last_prefix, Node (is_word, priority, tree));
-            if is_empty (Node (is_word, priority, tree)) then []
-            else search_all (Node (is_word, priority, tree))
-        | h :: t ->
-            let prefix = prefix ^ String.make 1 h in
-            search_p t (StringMap.find prefix tree) prefix
+      let full_list =
+        let rec search_p prefix_list (Node (is_word, priority, tree)) prefix =
+          match prefix_list with
+          | [] ->
+              (* [last_visited] is the Node where key = last character in
+                 [prefix_list] *)
+              last_visited := (!last_prefix, Node (is_word, priority, tree));
+              if is_empty (Node (is_word, priority, tree)) then []
+              else search_all (Node (is_word, priority, tree))
+          | h :: t ->
+              let prefix = prefix ^ String.make 1 h in
+              search_p t (StringMap.find prefix tree) prefix
+        in
+        search_p prefix_list (Node (is_word, priority, tree)) ""
       in
-      search_p prefix_list (Node (is_word, priority, tree)) ""
+      print_endline (string_of_int (Hashtbl.length priorities));
+      (* print_endline (pqueue_to_string !pqueue); *)
+      print_endline (string_of_int (List.length full_list));
+      full_list
     with Not_found -> []
 
-  (* let search_five prefix_list (Node (is_word, priority, tree)) = let
-     returned_words = ref [] in let full_list = search prefix_list (Node
-     (is_word, priority, tree)) in (Lwt_list.iter_p (fun word -> Lwt.return
-     (returned_words := Hashtbl.find priorities word :: !returned_words))
-     full_list) in full_list >>= fun () -> full_list *)
+  (* in (Lwt_list.iter_p (fun word -> Lwt.return (returned_words := Hashtbl.find
+     priorities word :: !returned_words)) full_list) in full_list >>= fun () ->
+     full_list *)
 
   let all_words (Node (is_word, priority, tree)) =
     search (to_char_list "") (Node (is_word, priority, tree))
