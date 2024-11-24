@@ -18,11 +18,12 @@ let balance = function
 
 let rec insert_help x tree cmp =
   match tree with
-  | Leaf -> Node (Red, x, Leaf, Leaf)
+  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
   | Node (c, v, l, r) -> (
       let new_tree =
-        if cmp x v < 0 then Node (c, v, insert_help x l cmp, r)
-        else if cmp x v >= 0 then Node (c, v, l, insert_help x r cmp)
+        if cmp x (List.hd v) < 0 then Node (c, v, insert_help x l cmp, r)
+        else if cmp x (List.hd v) > 0 then Node (c, v, l, insert_help x r cmp)
+        else if cmp x (List.hd v) = 0 then Node (c, x :: v, l, r)
         else tree
       in
       match new_tree with
