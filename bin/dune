@@ -1,4 +1,6 @@
 (executable
  (public_name group_proj)
  (name main)
- (libraries group_proj str graphics camlimages.png camlimages.gif camlimages.graphics camlimages.core tree))
+ (libraries group_proj str graphics camlimages.png camlimages.gif camlimages.graphics camlimages.core tree
+ lwt.unix cohttp-lwt-unix yojson)
+ (preprocess (pps lwt_ppx)))
