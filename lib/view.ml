@@ -79,7 +79,7 @@ let center_pad width height =
 (**[no_suggest] clears the suggestions on the GUI*)
 let no_suggest x_off y_off =
   (* set_color (rgb 0 228 0); *)
-  set_color (rgb 229 228 226);
+  set_color (rgb 0 228 0);
   (* Pure white color *)
   fill_rect
     (x_off - 15) (* Same X-offset as print_suggestions1 *)
@@ -98,8 +98,8 @@ let rec words x_off pos_y = function
 
 (**[print_suggestions1 lst] words from lst onto a grey suggestion box*)
 let print_suggestions1 lst x_off y_off x_off_word =
-  (* set_color (rgb 229 0 0); *)
-  set_color (rgb 229 228 226);
+  set_color (rgb 229 0 0);
+  (* set_color (rgb 229 228 226); *)
   (* Pure white color *)
   fill_rect x_off_word (* Same X-offset as print_suggestions1 *)
     (y_off - 250) (* Ensure it covers the max vertical space *)
@@ -213,10 +213,21 @@ let rec accumulate_and_display acc x_off y_off x_off_word =
   else (
     print_suggestions1 suggestions x_off y_off x_off_word;
     accumulate_and_display updated_acc x_off y_off x_off_word)
+    
+    let hashtable_to_string table =
+      (* Convert the hashtable to a list of key-value pairs *)
+      let pairs = Hashtbl.fold (fun key value acc -> (key, value) :: acc) table [] in
+      (* Sort the pairs by the key *)
+      let sorted_pairs = List.sort (fun (key1, _) (key2, _) -> compare key1 key2) pairs in
+      (* Join all the formatted key-value pairs into a single string, separated by commas *)
+      String.concat ", " (List.map (fun (key, value) -> Printf.sprintf "%d:%s" key value) sorted_pairs)
 
 (**[print_to_screen accum x_int y_int counter] prints the suggestions and
    present typing to screen*)
-let rec print_to_screen accum x_int y_int counter x_off_word =
+let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
+    word_index =
+  print_endline accum;
+  let min_x_bound = 569 in 
   let max_x_bound = 1300 in
   let line_height = 20 in
   synchronize ();
@@ -230,7 +241,8 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" count y_int (count + 4) x_off_word)
+      print_to_screen "" count y_int (count + 4) x_off_word accum_sent
+        word_index)
     else ()
   else if c = '\x08' then
     if String.length accum > 0 then (
@@ -242,18 +254,24 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
       set_color black;
       moveto new_x_in y_int;
       draw_string new_accum;
-      print_to_screen new_accum new_x_in y_int (new_x_in + 4) x_off_word)
+      print_to_screen new_accum new_x_in y_int (new_x_in + 4) x_off_word
+        accum_sent word_index)
     else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
     print_autofill rest_of_word x_int y_int (rgb 229 228 226)
   else ();
+  (**Add word to accum_sentence if it is complete.*)
+  if (c <> '\x08' && c <> '\027') then Hashtbl.add accum_sent (word_index+1) (String.make 1 c)
+  else (); 
+  print_endline(hashtable_to_string accum_sent);
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
   let suggestions = Tr.search (string_to_char_list new_accum) tree in
   if c = ' ' then
     if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
-    else no_suggest x_int y_int
+    else if (x_int-50) < min_x_bound then no_suggest (min_x_bound+8) y_int
+    else no_suggest (x_int-50) y_int
   else print_suggestions1 suggestions x_int y_int x_off_word;
   if (580 < x_int && x_int < 590) && y_int < 855 then (
     (* set_color (rgb 0 0 224); *)
@@ -286,7 +304,10 @@ let rec print_to_screen accum x_int y_int counter x_off_word =
       if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
     in
     print_to_screen new_accum count y_offset (count + 4) x_off_word
-  else print_to_screen new_accum count y_offset (count + 4) x_off_word
+      accum_sent (word_index +1)
+  else
+    print_to_screen new_accum count y_offset (count + 4) x_off_word
+      accum_sent (word_index + 1)
 
 (**functions to read a ppm file to display a image*)
 
