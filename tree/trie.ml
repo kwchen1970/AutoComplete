@@ -64,7 +64,7 @@ module Trie : TRIE = struct
 
   (* Red-black tree that stores (priority, word) in order of smallest to
      greatest priority. *)
-  let pqueue = ref Rbtree.empty
+  (* let pqueue = ref Rbtree.empty *)
   let return_prior () = priorities
   let last_visited = ref ("", empty)
   let last_prefix = ref ""
