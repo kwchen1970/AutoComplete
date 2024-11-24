@@ -15,11 +15,17 @@ let headers =
     [
       ("Authorization", "Bearer " ^ api_key);
       ("Content-Type", "application/json");
+      ("x-wait-for-model", "true");
     ]
 
 (* TODO: use additional input params here. DOC:
    https://huggingface.co/docs/api-inference/tasks/text-generation *)
-let payload prompt = `Assoc [ ("inputs", `String prompt) ]
+let payload prompt =
+  `Assoc
+    [
+      ("inputs", `String prompt);
+      ("parameters", `Assoc [ ("max_new_tokens", `Int 10) ]);
+    ]
 
 let post_request api_url prompt =
   let body = Yojson.Basic.to_string (payload prompt) in
@@ -67,7 +73,13 @@ let complete_next_word prompt =
       Lwt.return (extract_first_word gen_text)
   | _ -> Lwt.return ""
 
-(* let () = let prompt = Sys.argv.(1) in let handle prompt = let%lwt res =
-   complete_sentence prompt in let%lwt first = complete_next_word prompt in
-   Printf.printf "\nExtracted: \n%s" res; Printf.printf "\nNext word: \n%s\n"
-   first; Lwt.return () in Lwt_main.run (handle prompt) *)
+let () =
+  let prompt = Sys.argv.(1) in
+  let handle prompt =
+    let%lwt res = complete_sentence prompt in
+    let%lwt first = complete_next_word prompt in
+    Printf.printf "\nExtracted: \n%s" res;
+    Printf.printf "\nNext word: \n%s\n" first;
+    Lwt.return ()
+  in
+  Lwt_main.run (handle prompt)
