@@ -130,22 +130,21 @@ module Trie : TRIE = struct
     let pairs = StringMap.bindings tree in
     let rec search_pairs pairs =
       match pairs with
-      | [] -> []
+      | [] -> ()
       | (key, _) :: t ->
           let (Node (is_word, priority, _)) = StringMap.find key tree in
           let cmp (k1, p1) (k2, p2) = p1 - p2 in
-          let a = search_pairs t in
+          let _ = search_pairs t in
           if StringMap.cardinal (get_tree (StringMap.find key tree)) != 0 then
             if is_word then (
               pqueue :=
                 Rbtree.insert (key, Hashtbl.find !priorities key) !pqueue cmp;
-              (key :: a) @ search_all (StringMap.find key tree))
-            else a @ search_all (StringMap.find key tree)
-          else (
+              search_all (StringMap.find key tree))
+            else search_all (StringMap.find key tree)
+          else
             (* Make larger priority on the left side of the tree. *)
             pqueue :=
-              Rbtree.insert (key, Hashtbl.find !priorities key) !pqueue cmp;
-            key :: a)
+              Rbtree.insert (key, Hashtbl.find !priorities key) !pqueue cmp
     in
     search_pairs pairs
 
@@ -161,15 +160,14 @@ module Trie : TRIE = struct
               (* [last_visited] is the Node where key = last character in
                  [prefix_list] *)
               last_visited := (!last_prefix, Node (is_word, priority, tree));
-              if is_empty (Node (is_word, priority, tree)) then
-                if is_word then [ prefix ] else []
+              if is_empty (Node (is_word, priority, tree)) then ()
               else if is_word then (
                 let cmp (k1, p1) (k2, p2) = p1 - p2 in
                 pqueue :=
                   Rbtree.insert
                     (prefix, Hashtbl.find !priorities prefix)
                     !pqueue cmp;
-                prefix :: search_all (Node (is_word, priority, tree)))
+                search_all (Node (is_word, priority, tree)))
               else search_all (Node (is_word, priority, tree))
           | h :: t ->
               let prefix = prefix ^ String.make 1 h in
@@ -182,19 +180,13 @@ module Trie : TRIE = struct
           (fun (k, p) -> k)
           (List.flatten (Rbtree.inorder_traversal !pqueue))
       in
-      print_endline
-        (List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" full_list);
       let rec sub_list full_list n =
         match (n, full_list) with
         | 0, _ -> []
         | _, [] -> []
         | n, h :: t -> h :: sub_list t (n - 1)
       in
-      let sub_l = sub_list (List.rev full_list) 5 in
-      print_endline
-        ("SUBMISTL "
-        ^ List.fold_left (fun acc elem -> acc ^ " " ^ elem) "" sub_l);
-      sub_l
+      sub_list (List.rev full_list) 5
     with Not_found -> []
 
   (* Recurse to the bottom of the tree, then continue making the nodes Empty

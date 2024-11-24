@@ -171,21 +171,18 @@ module TrieTester (T : TRIE) = struct
        let word_tree = insert_all wood_lst empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        make_search_test (List.rev wood_lst) "wood " word_tree);
-      (print_endline "APPLE TEST";
-       let tree = T.empty in
+      (let tree = T.empty in
        let tree = T.insert (T.to_char_list "app") tree in
        let tree = T.insert (T.to_char_list "apple") tree in
        let tree = T.insert (T.to_char_list "applre") tree in
        let tree = T.remove "apple" tree in
-       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
-          (T.all_words tree)); *)
        make_search_test [ "app"; "applre" ] "app" tree);
       (let wood_lst =
          [
            "wood alcohol";
            "wood anemone";
            "wood anemone";
-           "wood\n         anemone";
+           "wood anemone";
            "wood anemone";
            "wood warbler";
          ]
