@@ -194,30 +194,24 @@ module Trie : TRIE = struct
             (* Start removing if the word is a leaf, if it is a parent, just
                make [is_word] false, propagate up [true] if can continue
                removing. *)
-            let new_tree =
-              if StringMap.cardinal tree <= 1 then StringMap.empty else tree
-            in
-            (Node (false, priority, new_tree), true)
-        | h :: t -> (
+            if StringMap.is_empty tree then
+              (Node (false, priority, StringMap.empty), true)
+            else (Node (false, priority, tree), false)
+        | h :: t ->
             let prefix = prefix ^ String.make 1 h in
-            print_endline
-              ("for " ^ prefix ^ " size: "
-              ^ string_of_int (StringMap.cardinal tree));
-            let node, is_remove =
-              remove_p t (Node (is_word, priority, tree)) prefix
+            let Node (is_word', _, new_tree), is_remove =
+              remove_p t (StringMap.find prefix tree) prefix
             in
-            let new_tree = StringMap.add prefix node tree in
-            match (is_remove, StringMap.cardinal tree <= 1) with
-            | true, true ->
-                print_endline
-                  ("removing " ^ prefix ^ " " ^ string_of_bool is_word);
-                (Node (is_word, priority, StringMap.empty), true)
-            | _, false | false, _ -> (Node (is_word, priority, new_tree), false)
-            )
-        (* Do something here *)
+            let updated_tree =
+              if is_remove && StringMap.is_empty new_tree then
+                StringMap.remove prefix tree
+              else
+                StringMap.add prefix (Node (is_word', priority, new_tree)) tree
+            in
+            ( Node (is_word, priority, updated_tree),
+              is_remove && StringMap.is_empty updated_tree )
       in
-      let _ = remove_p prefix_list (Node (is_word, priority, tree)) "" in
-      trie
+      fst (remove_p prefix_list (Node (is_word, priority, tree)) "")
     with Not_found -> trie
 
   let all_words (Node (is_word, priority, tree)) =
