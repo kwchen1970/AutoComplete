@@ -334,10 +334,10 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     let () =
       draw_string (String.make 1 new_accum.[String.length new_accum - 1])
     in
-    if List.length suggestions > 0 then
+    if List.length suggestions > 0 then (
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset (rgb 120 99 97) print_autofill
-        rest_of_word count y_offset (rgb 120 99 97)
+      print_autofill rest_of_word count y_offset (rgb 120 99 97);
+      print_autofill rest_of_word count y_offset (rgb 120 99 97))
     else ()
   else draw_string " ";
 
