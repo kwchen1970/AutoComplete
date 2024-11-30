@@ -1,5 +1,5 @@
 (library
  (name tree)
- (libraries str graphics batteries lwt.unix cohttp cohttp-lwt-unix)
+ (libraries str graphics batteries lwt.unix cohttp-lwt-unix yojson)
  
  (instrumentation (backend bisect_ppx)))
