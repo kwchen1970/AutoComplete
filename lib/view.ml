@@ -2,9 +2,10 @@ open Graphics
 include Tree.Trie
 module Tr = Trie
 include Tree.Dict
-open Array
 
 type t = Tr.t
+let string_list_to_string lst =
+  String.concat "" lst  (* Concatenates the list with no separator *)
 
 let rec insert_all word_list tree =
   match word_list with
@@ -38,6 +39,7 @@ let tree =
       "triangle";
     ]
     Tr.empty
+let full_tree = insert_all (create_dict "data/COMMON.TXT" []) Tr.empty
 
 (**[string_to_char_list str] is the char list form a string*)
 let string_to_char_list str = List.of_seq (String.to_seq str)
@@ -74,8 +76,7 @@ let rec bubble (st : int) (ed : int) () =
 let center_pad width height =
   let x = (1920 - width) / 2 in
   let y = (1080 - height) / 2 in
-  set_color (rgb 229 228 226);
-  (* set_color (rgb 200 28 226); *)
+  set_color (rgb 0 200 0);
   fill_rect x y width height
 
 (**[no_suggest] clears the suggestions on the GUI*)
@@ -154,6 +155,7 @@ let turn_char_to_string_lis trie =
 (**[autofill word_accum suggestions] rest of the word to be filled by the
    suggestion*)
 let autofill word_accum suggestions =
+  if List.length suggestions = 0 then "" else
   let suggestion = List.nth suggestions 0 in
   String.sub suggestion (String.length word_accum)
     (String.length suggestion - String.length word_accum)
@@ -161,11 +163,8 @@ let autofill word_accum suggestions =
 (** [print_autofill rest_of_word x_int y_int color] prints the autofilled word
     from suggestions*)
 let rec print_autofill rest_of_word x_int y_int color =
-  let bg = rgb 229 228 226 in
-  let fg = color in
-  let col = blend_color 0.4 bg fg in
   let count = x_int + 7 in
-  set_color col;
+  set_color color;
   moveto count y_int;
   draw_string (String.make 1 rest_of_word.[0]);
   if String.length rest_of_word > 1 then
@@ -201,122 +200,67 @@ let start_text () =
   let y = 875 in
   moveto x y;
   draw_string title
-
-let print_array arr = Array.iter (fun x -> print_endline x) arr
-
-(**[accumulate_and_display acc] accumulates keys pressed and prints suggestions
-   to screen*)
-let rec accumulate_and_display acc x_off y_off x_off_word =
-  let c = read_key () in
-  let updated_acc = acc ^ String.make 1 c in
-
-  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
-  if c = ' ' then (
-    print_suggestions1 suggestions x_off y_off x_off_word;
-    accumulate_and_display "" x_off y_off x_off_word)
-  else (
-    print_suggestions1 suggestions x_off y_off x_off_word;
-    accumulate_and_display updated_acc x_off y_off x_off_word)
-
+    
 let hashtable_to_string table =
   (* Convert the hashtable to a list of key-value pairs *)
-  let pairs =
-    Hashtbl.fold (fun key value acc -> (key, value) :: acc) table []
-  in
+  let pairs = Hashtbl.fold (fun key value acc -> (key, value) :: acc) table [] in
   (* Sort the pairs by the key *)
-  let sorted_pairs =
-    List.sort (fun (key1, _) (key2, _) -> compare key1 key2) pairs
-  in
-  (* Join all the formatted key-value pairs into a single string, separated by
-     commas *)
-  String.concat ", "
-    (List.map
-       (fun (key, value) -> Printf.sprintf "%d:%s" key value)
-       sorted_pairs)
-
-let hashtable_to_text table : string =
-  let pairs =
-    Hashtbl.fold (fun key value acc -> (key, value) :: acc) table []
-  in
-  (* Sort the pairs by the key *)
-  let sorted_pairs =
-    List.sort (fun (key1, _) (key2, _) -> compare key1 key2) pairs
-  in
-  (* let char_lst = Hashtbl.fold (fun k v acc -> v :: acc) sorted_pairs [] in *)
-  List.fold_left (fun acc (key, elem) -> acc ^ elem) "" sorted_pairs
-
-let save_text_to_file filename text =
-  let oc = open_out filename in
-  output_string oc text;
-  close_out oc;
-  print_endline ("Text saved to " ^ filename)
-
-let command_pressed = ref false
+  let sorted_pairs = List.sort (fun (key1, _) (key2, _) -> compare key1 key2) pairs in
+  (* Join all the formatted key-value pairs into a single string, separated by commas *)
+  String.concat ", " (List.map (fun (key, value) -> Printf.sprintf "%d:%s" key value) sorted_pairs)
 
 (**[print_to_screen accum x_int y_int counter] prints the suggestions and
    present typing to screen*)
-let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
+let rec print_to_screen accum x_int y_int counter x_off_word accum_sent accum_sentence
     word_index =
-  let min_x_bound = 569 in
+  print_endline ("accum is ["^ accum ^ "]");
+  let min_x_bound = 569 in 
   let max_x_bound = 1300 in
   let line_height = 20 in
   synchronize ();
+
+  (* print_endline("old_suggestions is "^string_lis_to_string (Tr.search (string_to_char_list accum) tree)); *)
   (* Get the current character input *)
-  let old_suggestions = Tr.search (string_to_char_list accum) tree in
+  let old_suggestions = 
+  if String.length accum > 0 then 
+ Tr.search (string_to_char_list accum) full_tree else [] in 
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
-  if c = 's' && !command_pressed then begin
-    (* Save the text content to a file *)
-    (* save_text_to_file "output.txt" !text; *)
-    print_endline (hashtable_to_text accum_sent);
-    save_text_to_file "output.txt" (hashtable_to_text accum_sent)
-  end
-  else if c = '\027' then begin
-    (* Detect Command key press (Escape is used here for simplicity) *)
-    command_pressed := true
-  end
-  else if
-    (* If any key is pressed, add to the buffer *)
-    (* command_pressed := false; *)
-    c = '\008'
-  then begin
-    set_color (rgb 229 228 226);
-    fill_rect x_int y_int 14 (line_height - 5);
-    let new_accum =
-      if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
-    in
-    print_to_screen new_accum (x_int - 7) y_int counter x_off_word accum_sent
-      word_index
-  end
+  if c = '\027' then ()
   else if c = '\t' && String.length accum > 0 then
     if List.length old_suggestions > 0 then (
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" count y_int (count + 4) x_off_word accum_sent
+      print_to_screen "" count y_int (count + 4) x_off_word accum_sent accum_sentence
         word_index)
     else ()
+  else if c = '\x08' then
+    ()
+  (** where the traingle problem starts*)
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int black
+    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
   else ();
-  if c <> '\x08' && c <> '\027' then
-    Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
-  else ();
-  print_endline (hashtable_to_string accum_sent);
-
+  print_endline("old_suggestions are "^ string_lis_to_string old_suggestions);
+  (**Add word to accum_sentence if it is complete.*)
+  if (c <> '\x08' && c <> '\027') then Hashtbl.add accum_sent (word_index+1) (String.make 1 c)
+  else (); 
+  (* print_endline(hashtable_to_string accum_sent); *)
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-  let suggestions = Tr.search (string_to_char_list new_accum) tree in
+  let suggestions = 
+  if c <> ' ' then 
+Tr.search (string_to_char_list new_accum) full_tree else [] in 
   if c = ' ' then
-    if c = ' ' then
-      if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
-      else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
-      else no_suggest (x_int - 50) y_int
-    else print_suggestions1 suggestions x_int y_int x_off_word;
+    if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
+    else if (x_int-50) < min_x_bound then no_suggest (min_x_bound+8) y_int
+    else no_suggest (x_int-50) y_int
+  else print_suggestions1 suggestions x_int y_int x_off_word;
+  print_endline("suggestions are "^string_lis_to_string suggestions);
   if (580 < x_int && x_int < 590) && y_int < 855 then (
     (* set_color (rgb 0 0 224); *)
-    set_color (rgb 229 228 226);
+    set_color (rgb 255 182 193);
     fill_rect
       (max_x_bound - 190) (* Same X-offset as print_suggestions1 *)
       (y_int - 230) (* Ensure it covers the max vertical space *)
@@ -327,7 +271,6 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     else (x_int + 7, y_int)
   in
   (* Display the current typed characters *)
-  (* print_endline new_accum; *)
   set_color black;
   moveto count y_offset;
   if String.length new_accum > 0 then
@@ -336,8 +279,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     in
     if List.length suggestions > 0 then (
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset (rgb 120 99 97);
-      print_autofill rest_of_word count y_offset (rgb 120 99 97))
+      print_autofill rest_of_word count y_offset red
     else ()
   else draw_string " ";
 
@@ -346,11 +288,11 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     let x_off_word =
       if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
     in
-    print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
-      (word_index + 1)
+    print_to_screen new_accum count y_offset (count + 4) x_off_word
+      accum_sent accum_sentence (word_index +1)
   else
-    print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
-      (word_index + 1)
+    print_to_screen new_accum count y_offset (count + 4) x_off_word
+      accum_sent accum_sentence (word_index + 1)
 
 (**functions to read a ppm file to display a image*)
 
@@ -412,3 +354,4 @@ let load_ppm filename =
     read_pixel 0;
 
     close_in ic
+    
