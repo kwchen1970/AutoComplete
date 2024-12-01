@@ -144,7 +144,7 @@ let rec turn_char_to_string acc =
     turn_char_to_string accum
 
 (**[string_lis_to_string lis] is a string of a string list*)
-let string_lis_to_string lis = String.concat "," lis
+let string_lis_to_string lis = String.concat "" lis
 
 (**[turn_char_to_string_lis trie] is a list of the suggestions for a key pressed *)
 let turn_char_to_string_lis trie =
@@ -155,7 +155,7 @@ let turn_char_to_string_lis trie =
 (**[autofill word_accum suggestions] rest of the word to be filled by the
    suggestion*)
 
-(**FIX NOW PLEAASE FOR THE UNEXPECTED CRASHING*)
+(**suggestions can be empty but it breaks it when it is empty*)
 let autofill word_accum suggestions =
   if List.length suggestions = 0 then "" else
   let suggestion = List.nth suggestions 0 in
@@ -165,6 +165,9 @@ let autofill word_accum suggestions =
 (** [print_autofill rest_of_word x_int y_int color] prints the autofilled word
     from suggestions*)
 let rec print_autofill rest_of_word x_int y_int color =
+  if String.length rest_of_word = 0 then 
+    ()  
+  else 
   let count = x_int + 7 in
   set_color color;
   moveto count y_int;
@@ -214,12 +217,13 @@ let hashtable_to_string table =
 (**[print_to_screen accum x_int y_int counter] prints the suggestions and
    present typing to screen*)
 let rec print_to_screen accum x_int y_int counter x_off_word accum_sent accum_sentence
-    word_index=
+    word_index =
   print_endline ("accum is ["^ accum ^ "]");
   let min_x_bound = 569 in 
   let max_x_bound = 1300 in
   let line_height = 20 in
   synchronize ();
+  print_endline("length of accum is "^string_of_int (String.length accum));
 
   (* print_endline("old_suggestions is "^string_lis_to_string (Tr.search (string_to_char_list accum) tree)); *)
   (* Get the current character input *)
@@ -228,21 +232,23 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent accum_se
  Tr.search (string_to_char_list accum) full_tree else [] in 
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
-  (* if (c = '.' || c ='!' || c = '?') then Hashtbl.add accum_sentence word_index (sent) *)
- if  c = '\027' then ()
-  (* else if c = '\t' && String.length accum > 0 then
+  if c = '\027' then ()
+  else if c = '\t' && String.length accum > 0 then
     if List.length old_suggestions > 0 then (
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
       print_to_screen "" count y_int (count + 4) x_off_word accum_sent accum_sentence
-        word_index) *)
+        word_index)
+    else ()
   else if c = '\x08' then
     ()
   (** where the traingle problem starts*)
-  (* else if List.length old_suggestions > 0 then
+  else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int (rgb 229 228 226) *)
+    print_endline("rest of word is "^rest_of_word);
+    print_autofill rest_of_word x_int y_int (rgb 229 228 226);
+    print_endline("autofilled already");
   else ();
   print_endline("old_suggestions are "^ string_lis_to_string old_suggestions);
   (**Add word to accum_sentence if it is complete.*)
@@ -259,7 +265,6 @@ Tr.search (string_to_char_list new_accum) full_tree else [] in
     else if (x_int-50) < min_x_bound then no_suggest (min_x_bound+8) y_int
     else no_suggest (x_int-50) y_int
   else print_suggestions1 suggestions x_int y_int x_off_word;
-  print_endline("new_accum is "^ new_accum);
   print_endline("suggestions are "^string_lis_to_string suggestions);
   if (580 < x_int && x_int < 590) && y_int < 855 then (
     (* set_color (rgb 0 0 224); *)
@@ -276,14 +281,19 @@ Tr.search (string_to_char_list new_accum) full_tree else [] in
   (* Display the current typed characters *)
   set_color black;
   moveto count y_offset;
+  print_endline("before the draw_string");
+  print_endline("new_accum is "^new_accum);
   if String.length new_accum > 0 then
-      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
-    (* in
-    if List.length suggestions > 0 then
-      let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset red
-    else () *)
-  else draw_string " ";
+    let () =
+    draw_string (String.make 1 new_accum.[String.length new_accum - 1])
+  in
+  if List.length suggestions > 0 then
+    let rest_of_word = autofill new_accum suggestions in
+    print_autofill rest_of_word count y_offset red
+  else ()
+else draw_string " ";
+
+  print_endline("end of autofill part");
 
   (* Call the function recursively with the new accumulator *)
   if c = ' ' then
@@ -356,4 +366,3 @@ let load_ppm filename =
     read_pixel 0;
 
     close_in ic
-    
