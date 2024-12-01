@@ -37,6 +37,8 @@ val find_chosen_suggestion : string list -> string option
 
 val print_to_screen : string ->
   int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> unit
+val print_to_screen_sentence : string ->
+    int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
 (**prints the typing and suggestions to screen*)
 val basic_window : unit -> unit
 (**generates blank window*)
