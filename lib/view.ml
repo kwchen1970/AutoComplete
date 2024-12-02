@@ -308,9 +308,8 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
         accum_sentence word_index sent)
     else ()
   else if c = '\x08' then begin
-    (* where the triangle problem starts? *)
     set_color (rgb 229 228 226);
-    fill_rect x_int y_int 14 (line_height - 5);
+    fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
     if Hashtbl.mem accum_sentence word_index then begin
       let last_sent = Hashtbl.find accum_sentence word_index in
       if String.length last_sent = 1 then
@@ -320,9 +319,16 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
           (String.sub last_sent 0 (String.length last_sent - 1))
     end
     else ();
-    let new_accum =
+    let new_accum = 
       if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
+    in let suggestions =
+      if c <> ' ' then Tr.search (string_to_char_list new_accum) full_tree else []
     in
+    if c = ' ' then
+      if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
+      else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
+      else no_suggest (x_int - 50) y_int
+    else print_suggestions1 suggestions x_int y_int x_off_word;
     print_to_screen new_accum (x_int - 7) y_int counter x_off_word accum_sent
       accum_sentence word_index sent
   end
@@ -337,7 +343,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
   if c <> '\x08' && c <> '\027' then
     Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
   else ();
-  print_endline (hashtable_to_string accum_sentence);
+  print_endline (hashtable_to_string accum_sent);
   (* Append the character to the accumulator if it's not a space *)
   let new_sent =
     if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
