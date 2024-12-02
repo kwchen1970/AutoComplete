@@ -50,3 +50,4 @@ val load_ppm: string -> unit
 (**loads a ppm file into a image*)
 (* 
 val test_sentence_auto : string -> int -> int -> unit  *)
+val draw_buttons : unit -> unit
