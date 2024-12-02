@@ -92,7 +92,7 @@ let () =
     let img = Graphics.make_image color_array in
     Graphics.draw_image img 550 900;
     if Sys.argv.(1) = "autofill" then 
-    print_to_screen "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0
+    print_to_screen "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
   else if Sys.argv.(1) = "sentence" then print_to_screen_sentence "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
   with
   | Graphics.Graphic_failure _ ->

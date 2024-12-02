@@ -45,12 +45,19 @@ let extract_generated org_text gen_text =
 (** [complete_sentence prompt] is the auto-completed sentence following
     [prompt]. *)
 let complete_sentence prompt =
+  print_endline ("Input to complete_sentence: " ^ prompt);
   let%lwt res_json = post_request gpt2_url prompt in
   match res_json with
+  | `Assoc [ ("generated_text", `String result) ] ->
+      Printf.printf "Response: \n%s\n" result;
+      Lwt.return (extract_generated prompt result)
   | `List [ `Assoc [ ("generated_text", `String result) ] ] ->
       Printf.printf "Response: \n%s" result;
       Lwt.return (extract_generated prompt result)
-  | _ -> Lwt.return ""
+  | _ ->
+      print_endline
+        ("Unexpected response: " ^ Yojson.Basic.pretty_to_string res_json);
+      Lwt.return ""
 
 let extract_first_word text =
   try
