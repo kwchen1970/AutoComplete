@@ -80,6 +80,7 @@ let i_length img = sec_tup (Images.size img)
 let () =
   try
     basic_window ();
+    draw_buttons ();
     start_text ();
     let color_array = load_ppm_as_color_array "data/actual_sugar_title.ppm" in
     let img = Graphics.make_image color_array in
