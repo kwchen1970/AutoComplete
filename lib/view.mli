@@ -39,6 +39,8 @@ val print_to_screen : string ->
   int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
 val print_to_screen_sentence : string ->
     int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
+    val print_to_screen_both : string ->
+      int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
 (**prints the typing and suggestions to screen*)
 val basic_window : unit -> unit
 (**generates blank window*)
