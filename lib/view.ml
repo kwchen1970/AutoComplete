@@ -310,27 +310,31 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
   else if c = '\x08' then begin
     set_color (rgb 229 228 226);
     fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
-    if Hashtbl.mem accum_sentence word_index then begin
+    (* if Hashtbl.mem accum_sentence word_index then begin
       let last_sent = Hashtbl.find accum_sentence word_index in
       if String.length last_sent = 1 then
-        Hashtbl.add accum_sentence word_index ""
+        Hashtbl.replace accum_sentence word_index ""
       else
-        Hashtbl.add accum_sentence word_index
+        Hashtbl.replace accum_sentence word_index
           (String.sub last_sent 0 (String.length last_sent - 1))
     end
-    else ();
+    else (); *)
+    if Hashtbl.mem accum_sent word_index then begin
+      Hashtbl.remove accum_sent word_index
+    end
+  else();
     let new_accum = 
       if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
     in let suggestions =
       if c <> ' ' then Tr.search (string_to_char_list new_accum) full_tree else []
     in
-    if c = ' ' then
+    if c = ' '|| new_accum = "" then
       if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
       else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
       else no_suggest (x_int - 50) y_int
     else print_suggestions1 suggestions x_int y_int x_off_word;
     print_to_screen new_accum (x_int - 7) y_int counter x_off_word accum_sent
-      accum_sentence word_index sent
+      accum_sentence (word_index-1) sent
   end
   else if List.length old_suggestions > 0 then (
     let rest_of_word = autofill accum old_suggestions in
