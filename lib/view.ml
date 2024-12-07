@@ -279,7 +279,7 @@ Tr.search (string_to_char_list new_accum) full_tree else [] in
     in
     if List.length suggestions > 0 then (
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset red
+      print_autofill rest_of_word count y_offset red)
     else ()
   else draw_string " ";
 
