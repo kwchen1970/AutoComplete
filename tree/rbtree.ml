@@ -4,7 +4,7 @@ type color =
 
 type 'a t =
   | Leaf
-  | Node of color * 'a * 'a t * 'a t
+  | Node of color * 'a list * 'a t * 'a t
 
 let empty = Leaf
 
@@ -18,11 +18,12 @@ let balance = function
 
 let rec insert_help x tree cmp =
   match tree with
-  | Leaf -> Node (Red, x, Leaf, Leaf)
+  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
   | Node (c, v, l, r) -> (
       let new_tree =
-        if cmp x v < 0 then Node (c, v, insert_help x l cmp, r)
-        else if cmp x v >= 0 then Node (c, v, l, insert_help x r cmp)
+        if cmp x (List.hd v) < 0 then Node (c, v, insert_help x l cmp, r)
+        else if cmp x (List.hd v) > 0 then Node (c, v, l, insert_help x r cmp)
+        else if cmp x (List.hd v) = 0 then Node (c, x :: v, l, r)
         else tree
       in
       match new_tree with
@@ -34,6 +35,35 @@ let insert x tree cmp =
   | Node (c, v, l, r) -> Node (Black, v, l, r)
   | _ -> tree
 
+let rec remove x tree cmp =
+  match tree with
+  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
+  | Node (c, v, l, r) -> (
+      let new_tree =
+        if cmp x (List.hd v) < 0 then Node (c, v, remove x l cmp, r)
+        else if cmp x (List.hd v) > 0 then Node (c, v, l, remove x r cmp)
+        else if cmp x (List.hd v) = 0 then
+          let rec remove_list x v =
+            match v with
+            | [] -> []
+            | h :: t -> if x = h then v else h :: remove_list x t
+          in
+          Node (c, remove_list x v, l, r)
+        else tree
+      in
+      match new_tree with
+      | Node (Black, v, l, r) -> balance (Black, v, l, r)
+      | _ -> new_tree)
+
+let rec mem x tree cmp =
+  match tree with
+  | Leaf -> false
+  | Node (c, v, l, r) ->
+      if cmp x (List.hd v) < 0 then mem x l cmp
+      else if cmp x (List.hd v) > 0 then mem x r cmp
+      else if cmp x (List.hd v) = 0 && List.mem x v then true
+      else false
+
 let string_of_color = function
   | Black -> "Black"
   | Red -> "Red"
@@ -41,17 +71,17 @@ let string_of_color = function
 let rec preorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> [ v ] @ preorder_traversal l @ preorder_traversal r
+  | Node (c, v, l, r) -> v @ preorder_traversal l @ preorder_traversal r
 
 let rec inorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> preorder_traversal l @ [ v ] @ preorder_traversal r
+  | Node (c, v, l, r) -> preorder_traversal l @ v @ preorder_traversal r
 
 let rec postorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> preorder_traversal l @ preorder_traversal r @ [ v ]
+  | Node (c, v, l, r) -> preorder_traversal l @ preorder_traversal r @ v
 
 let rec to_string f tree depth =
   match tree with

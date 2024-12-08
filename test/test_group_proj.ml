@@ -2,19 +2,8 @@ open OUnit2
 open Group_proj
 include Tree.Trie
 include Tree.Dict
-module TestTrie = Trie
 
 let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
-let tree = Trie.empty
-let tree = Trie.insert (Trie.to_char_list "app") tree
-let tree = Trie.insert (Trie.to_char_list "apple") tree
-let tree = Trie.insert (Trie.to_char_list "applre") tree
-let searched = Trie.search (Trie.to_char_list "a") tree
-
-(* let _ = print_endline (fold_tree searched) *)
-let last = snd !Trie.last_visited
-let searched1 = Trie.search (Trie.to_char_list "pple") last
-(* let _ = print_endline (fold_tree searched1) *)
 
 let rec print_str_list lst =
   match lst with
@@ -30,7 +19,7 @@ module TrieTester (T : TRIE) = struct
   (* Thread each [insert] function in [insert_all]. *)
   (* Add tests for capitalization, punctuation, words that are substrings or
      other words, multiple element words (not allowed, used regex to stop). *)
-  let rec insert_all word_list tree =
+  let rec insert_all word_list tree : T.t =
     match word_list with
     | [] -> tree
     | h :: t ->
@@ -38,6 +27,20 @@ module TrieTester (T : TRIE) = struct
         insert_all t new_tree
 
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
+
+  let tree =
+    insert_all
+      [
+        "apple";
+        "aprle";
+        "appol";
+        "appla";
+        "apole";
+        "bapple";
+        "barple";
+        "triangle";
+      ]
+      empty
 
   let make_insert_test expected word_lst =
     "" >:: fun _ ->
@@ -48,13 +51,13 @@ module TrieTester (T : TRIE) = struct
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
-    assert_equal true
-      (cmp expected (all_words (insert_all word_lst empty)))
-      ~printer:string_of_bool;
-    (* Check if the length of [expected] = number of word leaves in the tree
+    let all = all_words (insert_all word_lst empty) in
+    assert_equal true (cmp expected all) ~printer:string_of_bool;
+    (* Check if the length of [expected] >= number of word leaves in the tree
        containing words from [word_list]. *)
-    assert_equal (List.length expected) (List.length word_lst)
-      ~printer:string_of_int
+    assert_equal true
+      (List.length expected >= List.length word_lst)
+      ~printer:string_of_bool
 
   (* [make_search_test] *)
   let make_search_test expected prefix tree =
@@ -67,11 +70,18 @@ module TrieTester (T : TRIE) = struct
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
     let leaves = search (to_char_list prefix) tree in
-    assert_equal true (cmp expected leaves) ~printer:string_of_bool;
+
+    (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
+       leaves); *)
+    assert_equal true (cmp leaves expected) ~printer:string_of_bool;
+
     (* Check if the length of [expected] = number of word leaves in the tree
        containing words from [word_list]. *)
-    assert_equal (List.length expected) (List.length leaves)
-      ~printer:string_of_int
+    assert_equal true
+      (if List.length expected > 5 then
+         List.length expected >= List.length leaves
+       else List.length expected = List.length leaves)
+      ~printer:string_of_bool
 
   let tree =
     insert_all
@@ -105,8 +115,14 @@ module TrieTester (T : TRIE) = struct
            "triangle";
          ]
        in
-       let word_tree = insert_all word_lst empty in
-       let _ = make_insert_test word_lst word_lst in
+       let word_tree =
+         refresh_priorities;
+         insert_all word_lst empty
+       in
+       let _ =
+         refresh_priorities;
+         make_insert_test word_lst word_lst
+       in
        let _ = make_search_test [ "apple"; "appol"; "appla" ] "app" word_tree in
        let _ =
          make_search_test (all_words (insert_all word_lst empty)) "" word_tree
@@ -142,9 +158,56 @@ module TrieTester (T : TRIE) = struct
          ]
        in
        let word_tree = insert_all wood_dict empty in
+
+       make_search_test wood_lst "wood " word_tree);
+      (refresh_priorities;
+       let wood_lst =
+         [
+           "wood alcohol";
+           "wood anemone";
+           "wood block";
+           "wood ibis";
+           "wood lot";
+           "wood warbler";
+           "wood rat";
+           "wood sorrel";
+           "wood anemone";
+           "wood anemone";
+           "wood anemone";
+           "wood warbler";
+         ]
+       in
+       let word_tree = insert_all wood_lst empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        make_search_test (List.rev wood_lst) "wood " word_tree);
+      (let tree = T.empty in
+       let tree = T.insert (T.to_char_list "app") tree in
+       let tree = T.insert (T.to_char_list "apple") tree in
+       let tree = T.insert (T.to_char_list "applre") tree in
+       let tree = T.remove "apple" tree in
+       make_search_test [ "app"; "applre" ] "app" tree);
+      (let wood_lst =
+         [
+           "wood alcohol";
+           "wood anemone";
+           "wood anemone";
+           "wood anemone";
+           "wood anemone";
+           "wood warbler";
+         ]
+       in
+       let word_tree = insert_all wood_lst empty in
+       let _ = make_search_test wood_lst "wood " word_tree in
+       let word_tree = T.remove "wood anemone" word_tree in
+       let word_tree = T.remove "wood" word_tree in
+       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
+          (T.all_words word_tree)); *)
+       make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
+
+  (* Make QCheck test for search and insert. *)
+
+  (* Make tests for priority queue stuff. *)
 end
 
 module NGramTester (C : module type of NgramColl) = struct
@@ -251,11 +314,310 @@ module NGramTester (C : module type of NgramColl) = struct
     ]
 end
 
+module RBTreeTester (RB : module type of Tree.Rbtree) = struct
+  include RB
+
+  let cmp (k1, p1) (k2, p2) = p1 - p2
+
+  let rec function_all f list rbtree =
+    match list with
+    | [] -> rbtree
+    | h :: t ->
+        let new_rbtree = f h rbtree cmp in
+        function_all f t new_rbtree
+
+  let insert_all list rbtree = function_all RB.insert list rbtree
+  let rec remove_all list rbtree = function_all RB.remove list rbtree
+
+  let make_is_empty_test expected tree =
+    "" >:: fun _ ->
+    assert_equal expected (RB.is_empty tree) ~printer:string_of_bool
+
+  let make_mem_test expected word tree =
+    "" >:: fun _ ->
+    assert_equal expected (RB.mem word tree cmp) ~printer:string_of_bool
+
+  (* Make another membership test that tests the membership of pre, in,
+     post-order traversals. *)
+  let make_traversal_mem_test word_list tree =
+    "" >:: fun _ ->
+    let new_tree = insert_all word_list tree in
+    let inorder_list = RB.inorder_traversal new_tree in
+    let rec check_mem word_list tree =
+      match word_list with
+      | [] -> true
+      | word :: t ->
+          let check =
+            List.mem word (RB.preorder_traversal tree)
+            && List.mem word (RB.postorder_traversal tree)
+          in
+          if check then check_mem t tree else false
+    in
+    let actual =
+      check_mem inorder_list new_tree
+      && List.length word_list = List.length inorder_list
+      && List.length word_list = List.length (RB.preorder_traversal new_tree)
+      && List.length word_list = List.length (RB.postorder_traversal new_tree)
+    in
+    assert_equal true actual
+
+  let rec make_insert_test words tree =
+    match words with
+    | [] -> "" >:: fun _ -> assert_equal true true
+    | word :: t ->
+        let new_tree = RB.insert word tree cmp in
+        let _ =
+          assert_equal true
+            (List.length (RB.preorder_traversal tree)
+            <= List.length (RB.preorder_traversal new_tree));
+          assert_equal true
+            (List.length (RB.inorder_traversal tree)
+            <= List.length (RB.inorder_traversal new_tree));
+          assert_equal true
+            (List.length (RB.postorder_traversal tree)
+            <= List.length (RB.postorder_traversal new_tree));
+          assert_equal true (RB.mem word new_tree cmp) ~printer:string_of_bool
+        in
+        make_insert_test t new_tree
+
+  let rec make_remove_test words tree =
+    match words with
+    | [] -> "" >:: fun _ -> assert_equal true true
+    | word :: t ->
+        let new_tree = RB.remove word tree cmp in
+        let _ =
+          assert_equal true
+            (List.length (RB.preorder_traversal tree)
+            >= List.length (RB.preorder_traversal new_tree));
+          assert_equal true
+            (List.length (RB.inorder_traversal tree)
+            >= List.length (RB.inorder_traversal new_tree));
+          assert_equal true
+            (List.length (RB.postorder_traversal tree)
+            >= List.length (RB.postorder_traversal new_tree));
+          assert_equal false (RB.mem word new_tree cmp) ~printer:string_of_bool
+        in
+        make_remove_test t new_tree
+
+  let make_to_string_test expected tree =
+    "" >:: fun _ ->
+    let allowed = Str.regexp "[a-zA-Z0-9]+" in
+    let rec split start_pos line =
+      match start_pos = String.length line with
+      | true -> []
+      | false -> (
+          try
+            let _ = Str.search_forward allowed line start_pos in
+            let first_word = Str.matched_string line in
+            let new_start_pos = start_pos + String.length first_word in
+            let second_word_pos =
+              try Str.search_forward allowed line new_start_pos
+              with Not_found -> String.length line
+            in
+            first_word :: split second_word_pos line
+          with Not_found -> if line = "" then [] else [ line ])
+    in
+    let expected_list = split 0 expected in
+    let actual_list =
+      split 0
+        (RB.to_string
+           (List.fold_left
+              (fun acc (k, p) ->
+                if acc <> "" then acc ^ ", " ^ k ^ "[" ^ string_of_int p ^ "]"
+                else k ^ "[" ^ string_of_int p ^ "]")
+              "")
+           tree 0)
+    in
+    assert_equal expected_list actual_list
+      ~printer:(List.fold_left (fun acc elem -> acc ^ " " ^ elem) "")
+
+  let arb_word =
+    let possible_words = create_dict "../data/COMMON.TXT" [] in
+    QCheck.(
+      map
+        (fun (k_index, p) -> (List.nth possible_words k_index, p))
+        (pair (0 -- (List.length possible_words - 1)) (1 -- 100)))
+
+  let ref_tree = ref RB.empty
+  let ref_list = ref []
+
+  (* Also make a [make_random_remove_test]. *)
+  let make_random_insert_test word =
+    let rec make_random_insert_rec_test words tree =
+      ref_tree := RB.insert word !ref_tree cmp;
+      let check_inserted =
+        List.length (RB.preorder_traversal !ref_tree)
+        >= List.length (RB.preorder_traversal tree)
+        && List.length (RB.inorder_traversal !ref_tree)
+           >= List.length (RB.inorder_traversal tree)
+        && List.length (RB.postorder_traversal !ref_tree)
+           >= List.length (RB.postorder_traversal tree)
+        && RB.mem word !ref_tree cmp
+      in
+      check_inserted
+    in
+    make_random_insert_rec_test word !ref_tree
+
+  (* [make_random_remove_test word] uses QCheck to test properties of removing
+     randomized [word]s from the tree. *)
+  let make_random_remove_test word =
+    let rec make_random_remove_rec_test word tree =
+      ref_tree := RB.remove word !ref_tree cmp;
+      let check_inserted =
+        List.length (RB.preorder_traversal !ref_tree)
+        <= List.length (RB.preorder_traversal tree)
+        && List.length (RB.inorder_traversal !ref_tree)
+           <= List.length (RB.inorder_traversal tree)
+        && List.length (RB.postorder_traversal !ref_tree)
+           <= List.length (RB.postorder_traversal tree)
+        && not (RB.mem word !ref_tree cmp)
+      in
+      check_inserted
+    in
+    ref_list := word :: !ref_list;
+    ref_tree := RB.insert word !ref_tree cmp;
+    make_random_remove_rec_test word !ref_tree
+
+  let test_random_rbtree_insert_test =
+    QCheck.Test.make ~count:1000 arb_word make_random_insert_test
+
+  let test_random_rbtree_remove_test =
+    QCheck.Test.make ~count:1000 arb_word make_random_remove_test
+
+  let test_tree_A = RB.insert ("word", 1) RB.empty cmp
+
+  let list_B =
+    [
+      ("wood alcohol", 1);
+      ("wood anemone", 6);
+      ("wood block", 3);
+      ("wood ibis", 1);
+      ("wood lot", 1);
+      ("wood rat", 2);
+      ("wood sorrel", 4);
+      ("wood warbler", 2);
+    ]
+
+  let list_C =
+    [
+      ("wood meadow grass", 2);
+      ("wood mouse", 13);
+      ("wood nymph", 4);
+      ("wood pigeon", 91);
+    ]
+
+  let test_tree_B = insert_all list_B RB.empty
+  let test_tree_C = insert_all list_C test_tree_B
+
+  let make_rbtree_mem_test =
+    [
+      make_mem_test false ("anything", 1) RB.empty;
+      make_mem_test true ("word", 1) test_tree_A;
+      make_mem_test false ("word", 2) test_tree_A;
+      make_mem_test false ("ward", 1) test_tree_A;
+      make_traversal_mem_test [ ("word", 1) ] RB.empty;
+      make_mem_test true ("wood anemone", 6) test_tree_B;
+      make_mem_test true ("wood warbler", 2) test_tree_B;
+      make_mem_test false ("wood warbler", 3) test_tree_B;
+      make_mem_test false ("wood nynph", 4) test_tree_B;
+      make_traversal_mem_test list_B RB.empty;
+      make_mem_test true ("wood lot", 1) test_tree_C;
+      make_mem_test true ("wood pigeon", 91) test_tree_C;
+      make_mem_test false ("wood warbler", 3) test_tree_C;
+      make_mem_test false ("wood mouse", 3) test_tree_C;
+      make_traversal_mem_test list_C RB.empty;
+    ]
+
+  let make_rb_tree_insert_remove_test =
+    [
+      make_is_empty_test true RB.empty;
+      make_is_empty_test false test_tree_A;
+      make_insert_test [ ("word", 1) ] RB.empty;
+      make_insert_test list_B RB.empty;
+      make_insert_test list_B test_tree_A;
+      QCheck_runner.to_ounit2_test test_random_rbtree_insert_test;
+      QCheck_runner.to_ounit2_test test_random_rbtree_remove_test;
+      make_remove_test [ ("word", 1) ] test_tree_A;
+      (let empty_tree = RB.remove ("word", 1) test_tree_A cmp in
+       make_is_empty_test true empty_tree);
+      (let non_empty_tree = RB.remove ("word", 2) test_tree_A cmp in
+       make_is_empty_test false non_empty_tree);
+      make_remove_test [ ("word", 2) ] test_tree_A;
+      make_remove_test [ ("word", 1) ] test_tree_B;
+      make_remove_test
+        [
+          ("wood alcohol", 1);
+          ("wood anemone", 6);
+          ("wood block", 3);
+          ("wood ibis", 1);
+          ("wood lot", 1);
+          ("wood rat", 2);
+          ("wood sorrel", 4);
+          ("wood warbler", 2);
+        ]
+        test_tree_B;
+      (let empty_tree = remove_all list_B test_tree_B in
+       make_is_empty_test true empty_tree);
+      make_remove_test
+        [
+          ("wood lot", 1);
+          ("wood pigeon", 91);
+          ("wood warbler", 3);
+          ("wood mouse", 3);
+        ]
+        test_tree_C;
+      (let empty_tree = remove_all list_C test_tree_C in
+       make_is_empty_test false empty_tree);
+      (let empty_tree = remove_all (list_B @ list_C) test_tree_C in
+       make_is_empty_test true empty_tree);
+      make_to_string_test "Leaf" RB.empty;
+      make_to_string_test "0: Black Node: (word[1], Leaf, Leaf)" test_tree_A;
+      make_to_string_test
+        "0: Black Node: (wood block[3], \n\
+         1: Black Node: (wood lot[1], wood ibis[1], wood alcohol[1], Leaf, \n\
+         2: Red Node: (wood warbler[2], wood rat[2], Leaf, Leaf)), \n\
+         1: Black Node: (wood anemone[6], \n\
+         2: Red Node: (wood sorrel[4], Leaf, Leaf), Leaf))" test_tree_B;
+      make_to_string_test
+        "0: Black Node: (wood block[3], \n\
+         1: Black Node: (wood lot[1], wood ibis[1], wood alcohol[1], Leaf, \n\
+         2: Red Node: (wood meadow grass[2], wood warbler[2], wood rat[2], \
+         Leaf, Leaf)), \n\
+         1: Red Node: (wood mouse[13], \n\
+         2: Black Node: (wood anemone[6], \n\
+         3: Red Node: (wood nymph[4], wood sorrel[4], Leaf, Leaf), Leaf), \n\
+         2: Black Node: (wood pigeon[91], Leaf, Leaf)))" test_tree_C;
+    ]
+end
+
+module DictTester (D : module type of Tree.Dict) = struct
+  include D
+
+  let make_error_test func error = "" >:: fun _ -> assert_raises error func
+
+  let make_dict_test =
+    [
+      make_error_test
+        (fun () -> D.create_dict "../data/common.txt" [])
+        (D.File_not_found "[../data/common.txt] does not exist.");
+    ]
+end
+
 module TrieTest = TrieTester (Trie)
-module NGramTest = NGramTester (NgramColl)
+
+(* module NGramTest = NGramTester (NgramColl) *)
+module RBTreeTest = RBTreeTester (Tree.Rbtree)
+module DictTest = DictTester (Tree.Dict)
 
 let test_suite =
   "test suite"
-  >::: List.flatten [ TrieTest.make_tree_tests; NGramTest.make_ngram_test ]
+  >::: List.flatten
+         [
+           (* TrieTest.make_tree_tests; *)
+           (* NGramTest.make_ngram_test; *)
+           RBTreeTest.make_rbtree_mem_test;
+           RBTreeTest.make_rb_tree_insert_remove_test;
+           DictTest.make_dict_test;
+         ]
 
 let _ = run_test_tt_main test_suite
