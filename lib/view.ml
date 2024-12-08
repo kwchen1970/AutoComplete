@@ -81,7 +81,7 @@ let center_pad width height =
 (**[no_suggest] clears the suggestions on the GUI*)
 let no_suggest x_off y_off =
   (* set_color (rgb 0 228 0); *)
-  set_color (rgb 0 228 0);
+  set_color (rgb 229 228 226);
   (* Pure white color *)
   fill_rect
     (x_off - 15) (* Same X-offset as print_suggestions1 *)
@@ -100,8 +100,8 @@ let rec words x_off pos_y = function
 
 (**[print_suggestions1 lst] words from lst onto a grey suggestion box*)
 let print_suggestions1 lst x_off y_off x_off_word =
-  set_color (rgb 229 0 0);
-  (* set_color (rgb 229 228 226); *)
+  (* set_color (rgb 229 0 0); *)
+  set_color (rgb 229 228 226);
   (* Pure white color *)
   fill_rect x_off_word (* Same X-offset as print_suggestions1 *)
     (y_off - 250) (* Ensure it covers the max vertical space *)
@@ -210,7 +210,7 @@ let rec accumulate_and_display acc x_off y_off x_off_word =
   let c = read_key () in
   let updated_acc = acc ^ String.make 1 c in
 
-  let suggestions = Tr.search (Tr.to_char_list updated_acc) tree in
+  let suggestions = Tr.search (Tr.to_char_list updated_acc) word_tree in
   if c = ' ' then (
     print_suggestions1 suggestions x_off y_off x_off_word;
     accumulate_and_display "" x_off y_off x_off_word)
@@ -262,7 +262,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
   let line_height = 20 in
   synchronize ();
   (* Get the current character input *)
-  let old_suggestions = Tr.search (string_to_char_list accum) tree in
+  let old_suggestions = Tr.search (string_to_char_list accum) word_tree in
   let event = wait_next_event [ Key_pressed ] in
   let c = event.key in
   if c = 's' && !command_pressed then begin
@@ -298,7 +298,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     else ()
   else if List.length old_suggestions > 0 then
     let rest_of_word = autofill accum old_suggestions in
-    print_autofill rest_of_word x_int y_int black
+    print_autofill rest_of_word x_int y_int (rgb 229 228 226)
   else ();
   if c <> '\x08' && c <> '\027' then
     Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
@@ -307,7 +307,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
 
   (* Append the character to the accumulator if it's not a space *)
   let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-  let suggestions = Tr.search (string_to_char_list new_accum) tree in
+  let suggestions = Tr.search (string_to_char_list new_accum) word_tree in
   if c = ' ' then
     if c = ' ' then
       if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
@@ -336,8 +336,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     in
     if List.length suggestions > 0 then
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset (rgb 120 99 97) print_autofill
-        rest_of_word count y_offset (rgb 120 99 97)
+      print_autofill rest_of_word count y_offset (rgb 120 99 97)
     else ()
   else draw_string " ";
 
