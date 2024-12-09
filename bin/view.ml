@@ -508,7 +508,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
     let rest_sent = Lwt_main.run (complete_sentence sent) in
     print_endline ("rest of sentence is " ^ rest_sent);
-    print_autofill_sentence_blocking sent (counter + 4) y_int red; 
+    print_autofill_sentence_blocking sent (x_int+7) y_int red; 
 
   end
   else ();
