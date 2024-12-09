@@ -17,7 +17,7 @@ module type TRIE = sig
   (** [empty] is the empty Trie tree *)
 
   val refresh_priorities : unit
-  val return_pqueue : unit -> (string * int) list Rbtree.t
+  val return_pqueue : unit -> (string * int) Rbtree.t
   val pqueue_to_string : (string * int) Rbtree.t -> string
   val last_visited : (string * t) ref
   val last_prefix : string ref
@@ -72,8 +72,19 @@ module Trie : TRIE = struct
   let pqueue = ref Rbtree.empty
   let return_pqueue () = !pqueue
 
+  type id = {
+    name : string;
+    major : string;
+    year : int;
+  }
+
+  (* Data of the rbtree are lists containing values of the same priority. *)
   let pqueue_to_string pqueue =
-    Rbtree.to_string (fun (k, p) -> k ^ "[" ^ string_of_int p ^ "]") pqueue 0
+    Rbtree.to_string
+      (List.fold_left
+         (fun acc (k, p) -> acc ^ ", " ^ k ^ "[" ^ string_of_int p ^ "]")
+         "")
+      pqueue 0
 
   let last_visited = ref ("", empty)
   let last_prefix = ref ""
@@ -82,9 +93,9 @@ module Trie : TRIE = struct
     match StringMap.cardinal tree with
     | 0 -> true
     | _ -> false
+
   (* [empty] is the empty Trie tree, represented by an array containing 26 Nodes
      with elements [word] = "a" to "z" and both [t] = Leaf. *)
-
   let get_tree (Node (_, _, tree)) = tree
 
   let to_char_list word =
@@ -177,9 +188,7 @@ module Trie : TRIE = struct
         search_p prefix_list (Node (is_word, priority, tree)) ""
       in
       let full_list =
-        List.map
-          (fun (k, p) -> k)
-          (List.flatten (Rbtree.inorder_traversal !pqueue))
+        List.map (fun (k, p) -> k) (Rbtree.inorder_traversal !pqueue)
       in
       let rec sub_list full_list n =
         match (n, full_list) with
