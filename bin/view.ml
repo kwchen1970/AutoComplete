@@ -216,21 +216,24 @@ let rec print_autofill rest_of_word x_int y_int color =
         count y_int color
     else ()
 
-let rec print_sent_autofill rest_of_sent x_int y_int color =
+let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min line_height=
   print_endline "In PRINT_AUTOFILL start";
   print_endline ("rest_of_sent is "^ rest_of_sent);
-  if String.length rest_of_sent = 0 then ()
+  if String.length rest_of_sent = 0 then
+    x_int,y_int
   else (
     print_endline "IN PRINT_SENT_AUTOFILL else branch";
     let count = x_int + 6 in
+    let count2,y_int = if count > x_max then x_min,(y_int - line_height) else count,y_int in 
     set_color color;
-    moveto count y_int;
+    moveto count2 y_int;
     if String.length rest_of_sent > 0 then (
       draw_string (String.make 1 rest_of_sent.[0]);
       print_sent_autofill
         (String.sub rest_of_sent 1 (String.length rest_of_sent - 1))
-        count y_int color
-    )
+        count2 y_int color x_max x_min line_height
+    ) else
+      count,y_int 
   )
 
 
@@ -331,7 +334,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" count y_int (count + 4) x_off_word accum_sent
+      print_to_screen "" (count-60) y_int (count -60) x_off_word accum_sent
         accum_sentence word_index sent tree)
     else ()
   else if c = '\x08' then begin
@@ -488,7 +491,12 @@ let load_ppm filename =
 let overflow_rectangle () =
   set_color white;
   fill_rect (((1920 - 800) / 2) + 800) ((1080 - 800) / 2) 200 750
+  
 let sent_comp = ref ""
+let x_int_from_tab = ref 0
+let y_int_from_tab = ref 0
+let first_tup (x, _) = x
+let sec_tup (_, x) = x
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest =
   print_endline ("sentence is " ^ sent);
@@ -514,18 +522,30 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   exit 0;  end
   else if c = '\t'then 
     begin 
+    set_color (rgb 229 0 226);
+    (* Fill the rectangle with white to clear it *)
+    fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
     print_endline("In the TAB LOOP");
     if Hashtbl.find accum_sent word_index = " " then
     print_endline("here in the conditional");
     let old_suggest = last_sent_suggest in
-    print_sent_autofill old_suggest (x_int-7) y_int black;
-    let count = x_int + (7 * String.length old_suggest) in
-    print_to_screen_sentence "" count y_int (count + 5) x_off_word accum_sent
+    x_int_from_tab := first_tup (print_sent_autofill old_suggest (x_int-7) y_int black max_x_bound 580 line_height);
+    y_int_from_tab := sec_tup (print_sent_autofill old_suggest (x_int-7) y_int black max_x_bound 580 line_height);
+    (* moveto count y_int; *)
+    let count, y_offset =
+    if !x_int_from_tab >= max_x_bound then (580, !y_int_from_tab)
+    else (!x_int_from_tab + 7, !y_int_from_tab)
+  in
+    print_to_screen_sentence "" count y_offset (count + 4) x_off_word accum_sent
         accum_sentence word_index sent "";
   end
   else if c = '\x08' then begin
     set_color (rgb 229 228 226);
-    fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
+    let width = max_x_bound + 56 - x_int in
+  let height = line_height - 5 in
+    if width > 0 && height > 0 then
+    fill_rect x_int y_int width height
+    else ();
     let sent =
       if String.length sent = 0 then
         ""
@@ -566,17 +586,13 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   if String.length new_accum == 1 then begin
     (* Set color to white to clear the rectangle *)
     overflow_rectangle ();
-    set_color (rgb 229 228 226);
+    set_color (rgb 50 205 50);
 
     (* Fill the rectangle with white to clear it *)
     fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3)
   end;
   set_color black;
   moveto (x_int + 2) y_int;
-  (* if (580 < x_int && x_int < 590) && y_int < 855 then ( (* set_color (rgb 0 0
-     224); *) set_color (rgb 255 182 193); fill_rect (max_x_bound - 190) (* Same
-     X-offset as print_suggestions1 *) (y_int - 230) (* Ensure it covers the max
-     vertical space *) 250 (* Width matching print_suggestions1 *) 240); *)
   let count, y_offset =
     if x_int >= max_x_bound then (580, y_int - line_height)
     else (x_int + 7, y_int)
