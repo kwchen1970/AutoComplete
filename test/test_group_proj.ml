@@ -196,12 +196,14 @@ module TrieTester (T : module type of Trie) = struct
        let _ = make_search_test wood_lst "wood " word_tree in
        let word_tree = T.remove "wood anemone" word_tree in
        let word_tree = T.remove "wood" word_tree in
-       print_endline
-         (List.fold_left
-            (fun acc elem -> acc ^ " " ^ elem)
-            "" (T.all_words word_tree));
+       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
+          (T.all_words word_tree)); *)
        make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
+
+  (* Make QCheck test for search and insert. *)
+
+  (* Make tests for priority queue stuff. *)
 end
 
 module NGramTester (C : module type of NgramColl) = struct
@@ -606,6 +608,13 @@ module DictTest = DictTester (Dict)
 
 let test_suite =
   "test suite"
-  >::: List.flatten [ TrieTest.make_tree_tests (*NGramTest.make_ngram_test*) ]
+  >::: List.flatten
+         [
+           (* TrieTest.make_tree_tests; *)
+           (* NGramTest.make_ngram_test; *)
+           RBTreeTest.make_rbtree_mem_test;
+           RBTreeTest.make_rb_tree_insert_remove_test;
+           DictTest.make_dict_test;
+         ]
 
 let _ = run_test_tt_main test_suite

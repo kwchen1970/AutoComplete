@@ -1,7 +1,7 @@
 open Graphics
-include Tree.Trie
+include Trie
 module Tr = Trie
-include Tree.Dict
+include Dict
 open Group_proj.Inference
 include Lwt.Infix
 
