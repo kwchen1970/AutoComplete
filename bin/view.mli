@@ -15,9 +15,6 @@ val is_inside : int * int -> int * int -> int -> int -> bool
 
 val find_chosen_suggestion : string list -> string option
 (** finds and draws the suggestion that the user clicked on *)
-
-val print_to_screen : string -> int -> int -> int -> unit
-(**prints the typing and suggestions to screen*)
 val insert_all : string list -> t -> t
 (**[insert_all lis t] inserts all words in lis into a t*)
 val string_to_char_list : string -> char list
@@ -35,11 +32,11 @@ val is_inside : int * int -> int * int -> int -> int -> bool
 val find_chosen_suggestion : string list -> string option
 (** finds and draws the suggestion that the user clicked on *)
 
-val print_to_screen : string ->
-  int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
+val print_to_screen_1 : string ->
+  int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string -> unit
 val print_to_screen_sentence : string ->
-    int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
-    val print_to_screen_both : string ->
+    int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string -> unit
+    val print_to_screen_both_1 : string ->
       int -> int -> int -> int -> (int, string) Hashtbl.t -> (int, string) Hashtbl.t -> int -> string-> unit
 (**prints the typing and suggestions to screen*)
 val basic_window : unit -> unit

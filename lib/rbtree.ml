@@ -4,7 +4,7 @@ type color =
 
 type 'a t =
   | Leaf
-  | Node of color * 'a list * 'a t * 'a t
+  | Node of color * 'a * 'a t * 'a t
 
 let empty = Leaf
 let is_empty tree = tree = Leaf
@@ -59,15 +59,6 @@ let rec remove x tree cmp =
       | Node (Black, v, l, r) -> balance (Black, v, l, r)
       | _ -> new_tree)
 
-let rec mem x tree cmp =
-  match tree with
-  | Leaf -> false
-  | Node (c, v, l, r) ->
-      if cmp x (List.hd v) < 0 then mem x l cmp
-      else if cmp x (List.hd v) > 0 then mem x r cmp
-      else if cmp x (List.hd v) = 0 && List.mem x v then true
-      else false
-
 let string_of_color = function
   | Black -> "Black"
   | Red -> "Red"
@@ -75,17 +66,17 @@ let string_of_color = function
 let rec preorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> v @ preorder_traversal l @ preorder_traversal r
+  | Node (c, v, l, r) -> [ v ] @ preorder_traversal l @ preorder_traversal r
 
 let rec inorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> preorder_traversal l @ v @ preorder_traversal r
+  | Node (c, v, l, r) -> preorder_traversal l @ [ v ] @ preorder_traversal r
 
 let rec postorder_traversal tree =
   match tree with
   | Leaf -> []
-  | Node (c, v, l, r) -> preorder_traversal l @ preorder_traversal r @ v
+  | Node (c, v, l, r) -> preorder_traversal l @ preorder_traversal r @ [ v ]
 
 let rec to_string f tree depth =
   match tree with

@@ -24,7 +24,13 @@ let payload prompt =
   `Assoc
     [
       ("inputs", `String prompt);
-      ("parameters", `Assoc [ ("max_new_tokens", `Int 10) ]);
+      ( "parameters",
+        `Assoc
+          [
+            ("max_new_tokens", `Int 10);
+            ("temperature", `Float 0.3);
+            ("top_p", `Float 0.8);
+          ] );
     ]
 
 let post_request api_url prompt =
