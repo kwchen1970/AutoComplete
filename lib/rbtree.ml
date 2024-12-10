@@ -7,6 +7,7 @@ type 'a t =
   | Node of color * 'a list * 'a t * 'a t
 
 let empty = Leaf
+let is_empty tree = tree = Leaf
 
 let balance = function
   | Black, z, Node (Red, y, Node (Red, x, a, b), c), d
@@ -37,7 +38,7 @@ let insert x tree cmp =
 
 let rec remove x tree cmp =
   match tree with
-  | Leaf -> Node (Red, [ x ], Leaf, Leaf)
+  | Leaf -> tree
   | Node (c, v, l, r) -> (
       let new_tree =
         if cmp x (List.hd v) < 0 then Node (c, v, remove x l cmp, r)
@@ -46,9 +47,12 @@ let rec remove x tree cmp =
           let rec remove_list x v =
             match v with
             | [] -> []
-            | h :: t -> if x = h then v else h :: remove_list x t
+            | h :: t -> if x = h then t else h :: remove_list x t
           in
-          Node (c, remove_list x v, l, r)
+          let new_list = remove_list x v in
+          match new_list with
+          | [] -> Leaf
+          | _ -> Node (c, new_list, l, r)
         else tree
       in
       match new_tree with
@@ -87,7 +91,8 @@ let rec to_string f tree depth =
   match tree with
   | Leaf -> "Leaf"
   | Node (c, v, l, r) ->
-      "\n" ^ string_of_int depth ^ ": " ^ string_of_color c ^ " Node: (" ^ f v
+      let start = if depth > 0 then "\n" else "" in
+      start ^ string_of_int depth ^ ": " ^ string_of_color c ^ " Node: (" ^ f v
       ^ ", "
       ^ to_string f l (depth + 1)
       ^ ", "

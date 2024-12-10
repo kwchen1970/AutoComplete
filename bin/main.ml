@@ -1,10 +1,12 @@
 open Group_proj
-open Group_proj.View
-include Tree.Trie
+open View
+include Group_proj.Trie
 module Tr = Trie
-
+include Group_proj.Dict
 type t = Tr.t
+
 (** writing the image out functions*)
+
 let rgb24_to_color_array (img : Rgb24.t) : Graphics.color array array =
   let w, h = (img.Rgb24.width, img.Rgb24.height) in
   let color_matrix = Array.make_matrix h w Graphics.black in
@@ -86,9 +88,9 @@ let () =
     let img = Graphics.make_image color_array in
     Graphics.draw_image img 550 900;
     if Sys.argv.(1) = "autofill" then 
-    print_to_screen "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
-  else if Sys.argv.(1) = "sentence" then print_to_screen_sentence "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
-  else if Sys.argv.(1) = "both" then  print_to_screen_both "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
+    print_to_screen_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" 
+  else if Sys.argv.(1) = "sentence" then print_to_screen_sentence "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" ""
+  else if Sys.argv.(1) = "both" then  print_to_screen_both_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
   with
   | Graphics.Graphic_failure _ ->
       (* Catch the fatal I/O error and exit cleanly *)
