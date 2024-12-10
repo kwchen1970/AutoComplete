@@ -186,7 +186,7 @@ let print_autofill_sentence_blocking sent x_int y_int color =
   if String.length rest_sent > 0 then (
     set_color color;
     moveto x_int y_int;
-    draw_string rest_sent)
+    draw_string rest_sent);rest_sent
 
 (* let test_sentence_auto sent x_int y_int = print_autofill_sentence_blocking
    sent x_int y_int blue *)
@@ -216,18 +216,22 @@ let rec print_autofill rest_of_word x_int y_int color =
         count y_int color
     else ()
 
-let rec print_sent_autofill rest_of_sent x_int y_int color = 
+let rec print_sent_autofill rest_of_sent x_int y_int color =
+  print_endline "In PRINT_AUTOFILL start";
+  print_endline ("rest_of_sent is "^ rest_of_sent);
   if String.length rest_of_sent = 0 then ()
-  else
-    let count = x_int in
+  else (
+    print_endline "IN PRINT_SENT_AUTOFILL else branch";
+    let count = x_int + 6 in
     set_color color;
     moveto count y_int;
-    draw_string (String.make 1 rest_of_sent.[0]);
-    if String.length rest_of_sent > 1 then
+    if String.length rest_of_sent > 0 then (
+      draw_string (String.make 1 rest_of_sent.[0]);
       print_sent_autofill
         (String.sub rest_of_sent 1 (String.length rest_of_sent - 1))
         count y_int color
-    else ()
+    )
+  )
 
 
 (**[basic_window ()] creates a blank GUI*)
@@ -484,7 +488,7 @@ let load_ppm filename =
 let overflow_rectangle () =
   set_color white;
   fill_rect (((1920 - 800) / 2) + 800) ((1080 - 800) / 2) 200 750
-
+let sent_comp = ref ""
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest =
   print_endline ("sentence is " ^ sent);
@@ -508,13 +512,17 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     Hashtbl.add accum_sentence word_index sent
   else if c = '\027' then begin close_graph (); 
   exit 0;  end
-  else if c = '\t' then ()
-    (*begin if Hashtbl.find accum_sent word_index = " " then begin
+  else if c = '\t'then 
+    begin 
+    print_endline("In the TAB LOOP");
+    if Hashtbl.find accum_sent word_index = " " then
     print_endline("here in the conditional");
     let old_suggest = last_sent_suggest in
-    print_sent_autofill old_suggest x_int y_int black;
-    set_color (rgb 0 228 226); 
-  end *)
+    print_sent_autofill old_suggest (x_int-7) y_int black;
+    let count = x_int + (7 * String.length old_suggest) in
+    print_to_screen_sentence "" count y_int (count + 5) x_off_word accum_sent
+        accum_sentence word_index sent "";
+  end
   else if c = '\x08' then begin
     set_color (rgb 229 228 226);
     fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
@@ -533,15 +541,15 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         set_color (rgb 229 228 226);
         fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
         print_endline("prompt is " ^sent);
-      print_autofill_sentence_blocking sent (x_int + 7) y_int red; 
-        let old_suggest = last_sent_suggest in
+      sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red;
+      let old_suggest = last_sent_suggest in
       print_to_screen_sentence accum x_int y_int counter x_off_word
       accum_sent accum_sentence (word_index) sent old_suggest
       end
       else begin
       set_color (rgb 229 228 226);
       fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
-      print_autofill_sentence_blocking sent (x_int+7) y_int red; 
+      sent_comp :=  print_autofill_sentence_blocking sent (x_int+7) y_int red;
       end
   end
   else ();
@@ -580,11 +588,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     draw_string (String.make 1 new_accum.[String.length new_accum - 1])
   else draw_string " ";
 
-  (* print_autofill_sentence_blocking new_sent count y_offset red; *)
-
   (* Call the function recursively with the new accumulator *)
     print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-      accum_sent accum_sentence (word_index + 1) new_sent last_sent_suggest
+      accum_sent accum_sentence (word_index + 1) new_sent !sent_comp
 
 let rec print_to_screen_both accum x_int y_int counter x_off_word accum_sent accum_sentence
     word_index sent tree =
