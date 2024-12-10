@@ -24,21 +24,36 @@ module TrieTester (T : module type of Trie) = struct
         let new_tree = T.insert (T.to_char_list h) tree in
         insert_all t new_tree
 
+  let rec split allowed start_pos line =
+    match start_pos = String.length line with
+    | true -> []
+    | false -> (
+        try
+          let start_pos = Str.search_forward allowed line start_pos in
+          let first_word = Str.matched_string line in
+          let new_start_pos = start_pos + String.length first_word in
+          let second_word_pos =
+            try Str.search_forward allowed line new_start_pos
+            with Not_found -> String.length line
+          in
+          print_endline (first_word ^ " " ^ string_of_int new_start_pos);
+          first_word :: split allowed second_word_pos line
+        with Not_found -> if line = "" then [] else [ line ])
+
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
 
-  let tree =
-    insert_all
-      [
-        "apple";
-        "aprle";
-        "appol";
-        "appla";
-        "apole";
-        "bapple";
-        "barple";
-        "triangle";
-      ]
-      T.empty
+  let make_pqueue_to_string_test prefix inserted_list expected =
+    let tree = insert_all inserted_list T.empty in
+    let _ = T.search (T.to_char_list prefix) tree in
+    let rec cmp expected actual =
+      match expected with
+      | [] -> true
+      | h :: t -> if List.mem h actual then cmp t actual else false
+    in
+    let allowed = Str.regexp "\\([a-zA-Z0-9]+\\[[0-9]+\\]\\)" in
+    let actual = split allowed 0 (T.pqueue_to_string (T.return_pqueue ())) in
+    "" >:: fun _ ->
+    assert_equal true (cmp expected actual) ~printer:string_of_bool
 
   let make_insert_test expected word_lst =
     "" >:: fun _ ->
@@ -81,21 +96,26 @@ module TrieTester (T : module type of Trie) = struct
        else List.length expected = List.length leaves)
       ~printer:string_of_bool
 
-  let tree =
-    insert_all
-      [
-        "apple";
-        "aprle";
-        "appol";
-        "appla";
-        "apole";
-        "bapple";
-        "barple";
-        "triangle";
-      ]
-      T.empty
-
   (* Test suite that tests [insert]. *)
+  let make_pqueue_tests =
+    [
+      make_pqueue_to_string_test "a"
+        [
+          "apple";
+          "aprle";
+          "appol";
+          "appla";
+          "apole";
+          "bapple";
+          "barple";
+          "triangle";
+        ]
+        [ "apple[1]"; "aprle[1]"; "appol[1]"; "appla[1]"; "apole[1]" ];
+      make_pqueue_to_string_test "w"
+        [ "wood"; "ward"; "weed"; "wood"; "word" ]
+        [ "wood[2]"; "ward[1]"; "weed[1]"; "word[1]" ];
+    ]
+
   let make_tree_tests =
     [
       make_insert_test
@@ -127,7 +147,7 @@ module TrieTester (T : module type of Trie) = struct
        let _ = make_search_test [ "bapple"; "barple" ] "b" word_tree in
        make_search_test [ "triangle" ] "triangl" word_tree);
       make_search_test [] "" T.empty;
-      (let wood_dict = Dict.create_dict "../data/COMMON.TXT" [] in
+      (let wood_dict = Dict.create_dict "../data/COMMON.TXT" Dict.empty in
        let wood_lst =
          [
            "wood alcohol";
@@ -196,8 +216,6 @@ module TrieTester (T : module type of Trie) = struct
        let _ = make_search_test wood_lst "wood " word_tree in
        let word_tree = T.remove "wood anemone" word_tree in
        let word_tree = T.remove "wood" word_tree in
-       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
-          (T.all_words word_tree)); *)
        make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
 
@@ -403,7 +421,7 @@ module RBTreeTester (RB : module type of Rbtree) = struct
       | true -> []
       | false -> (
           try
-            let _ = Str.search_forward allowed line start_pos in
+            let start_pos = Str.search_forward allowed line start_pos in
             let first_word = Str.matched_string line in
             let new_start_pos = start_pos + String.length first_word in
             let second_word_pos =
@@ -428,7 +446,7 @@ module RBTreeTester (RB : module type of Rbtree) = struct
       ~printer:(List.fold_left (fun acc elem -> acc ^ " " ^ elem) "")
 
   let arb_word =
-    let possible_words = Dict.create_dict "../data/COMMON.TXT" [] in
+    let possible_words = Dict.create_dict "../data/COMMON.TXT" Dict.empty in
     QCheck.(
       map
         (fun (k_index, p) -> (List.nth possible_words k_index, p))
@@ -589,14 +607,105 @@ end
 module DictTester (D : module type of Dict) = struct
   include D
 
+  let rec cmp expected actual =
+    if List.length expected = List.length actual then cmp_rec expected actual
+    else false
+
+  and cmp_rec expected actual =
+    match expected with
+    | [] -> true
+    | h :: t -> if List.mem h actual then cmp_rec t actual else false
+
+  let dedup_list lst =
+    List.filteri
+      (fun curr_index curr_elem ->
+        match List.find_index (fun elem -> elem = curr_elem) lst with
+        | Some fst_index -> fst_index = curr_index
+        | None -> false)
+      lst
+
   let make_error_test func error = "" >:: fun _ -> assert_raises error func
-  (* let make_create_dict_test = failwith "TODO" *)
+
+  let make_create_dict_test bool_exp expected file_name =
+    "" >:: fun _ ->
+    let new_dict = create_dict file_name D.empty in
+    assert_equal bool_exp (cmp expected new_dict) ~printer:string_of_bool
+
+  let make_fold_test bool_exp expected dict =
+    "" >:: fun _ ->
+    let allowed = Str.regexp "[a-zA-Z0-9 ]+" in
+    let rec split start_pos line =
+      match start_pos = String.length line with
+      | true -> []
+      | false -> (
+          try
+            let start_pos = Str.search_forward allowed line start_pos in
+            let first_word = Str.matched_string line in
+            let new_start_pos = start_pos + String.length first_word in
+            let second_word_pos =
+              try Str.search_forward allowed line new_start_pos
+              with Not_found -> String.length line
+            in
+            match first_word with
+            | " " -> split second_word_pos line
+            | _ -> first_word :: split second_word_pos line
+          with Not_found -> if line = "" then [] else [ line ])
+    in
+    let actual_list = split 0 (D.fold dict) in
+    assert_equal bool_exp (cmp expected actual_list) ~printer:string_of_bool
+
+  let arb_word possible_words file_name =
+    QCheck.(
+      map
+        (fun i -> List.nth possible_words i)
+        (0 -- (List.length possible_words - 1)))
+
+  let make_random_check_test test_dict word = List.mem word test_dict
+
+  let make_random_rbtree_insert_test file_name =
+    let test_dict = Dict.create_dict file_name Dict.empty in
+    QCheck.Test.make ~count:1000
+      (arb_word test_dict file_name)
+      (make_random_check_test test_dict)
+
+  let dup_list =
+    [
+      "yellow";
+      "yellow";
+      "yellow bile";
+      "yellow brass";
+      "yellow cake";
+      "yellow fever";
+      "yellow flag";
+      "yellow jack";
+      "yellow jacket";
+      "yellow journalism";
+      "yellow jacket";
+      "yellow cake";
+      "yellow";
+    ]
 
   let make_dict_test =
     [
       make_error_test
-        (fun () -> D.create_dict "../data/common.txt" [])
+        (fun () -> D.create_dict "../data/common.txt" D.empty)
         (D.File_not_found "[../data/common.txt] does not exist.");
+      make_error_test
+        (fun () -> D.create_dict "../data/COMMON.txt" D.empty)
+        (D.File_not_found "[../data/COMMON.txt] does not exist.");
+      make_create_dict_test true
+        (D.create_lines_list "../data/YELLOW.TXT")
+        "../data/YELLOW.TXT";
+      make_create_dict_test false dup_list "../data/DUPYELLOW.TXT";
+      make_create_dict_test true (dedup_list dup_list) "../data/DUPYELLOW.TXT";
+      QCheck_runner.to_ounit2_test
+        (make_random_rbtree_insert_test "../data/COMMON.TXT");
+      QCheck_runner.to_ounit2_test
+        (make_random_rbtree_insert_test "../data/SINGLE.TXT");
+      make_fold_test true (dedup_list dup_list)
+        (D.create_dict "../data/DUPYELLOW.TXT" D.empty);
+      make_fold_test false dup_list
+        (D.create_dict "../data/DUPYELLOW.TXT" D.empty);
     ]
 end
 
@@ -611,10 +720,11 @@ let test_suite =
   >::: List.flatten
          [
            (* TrieTest.make_tree_tests; *)
+           TrieTest.make_pqueue_tests;
            (* NGramTest.make_ngram_test; *)
-           RBTreeTest.make_rbtree_mem_test;
-           RBTreeTest.make_rb_tree_insert_remove_test;
-           DictTest.make_dict_test;
+           (* RBTreeTest.make_rbtree_mem_test;
+              RBTreeTest.make_rb_tree_insert_remove_test;
+              DictTest.make_dict_test; *)
          ]
 
 let _ = run_test_tt_main test_suite

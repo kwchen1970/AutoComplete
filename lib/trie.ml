@@ -26,12 +26,6 @@ let refresh_priorities = priorities := Hashtbl.create 20
 let pqueue = ref Rbtree.empty
 let return_pqueue () = !pqueue
 
-type id = {
-  name : string;
-  major : string;
-  year : int;
-}
-
 (* Data of the rbtree are lists containing values of the same priority. *)
 let pqueue_to_string pqueue =
   Rbtree.to_string
