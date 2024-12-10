@@ -15,10 +15,10 @@ let create_lines_list file_name =
   with Sys_error _ ->
     raise (File_not_found ("[" ^ file_name ^ "] does not exist."))
 
-let rec fill_dictionary lines_list dict =
+let rec create_dict file_name dict =
+  fill_dictionary (create_lines_list file_name) dict
+
+and fill_dictionary lines_list dict =
   match lines_list with
   | [] -> dict
-  | h :: t -> h :: fill_dictionary t dict
-
-let create_dict file_name dict =
-  fill_dictionary (create_lines_list file_name) dict
+  | line :: t -> line :: fill_dictionary t dict
