@@ -1,8 +1,8 @@
 open Group_proj
 open View
-include Tree.Trie
+include Group_proj.Trie
 module Tr = Trie
-include Tree.Dict
+include Group_proj.Dict
 type t = Tr.t
 
 (** writing the image out functions*)

@@ -36,3 +36,4 @@ val search : char list -> t -> string list
 val all_words : t -> string list
 val remove : string -> t -> t
 val to_string : t -> string
+val insert_new : char list -> t -> t

@@ -1,7 +1,7 @@
 open Graphics
-include Trie
-module Tr = Trie
-include Dict
+include Group_proj.Trie
+module Tr = Group_proj.Trie
+include Group_proj.Dict
 open Group_proj.Inference
 include Lwt.Infix
 
@@ -15,7 +15,7 @@ let rec insert_all word_list tree =
   match word_list with
   | [] -> tree
   | h :: t ->
-      let new_tree = Trie.insert (Trie.to_char_list h) tree in
+      let new_tree = Tr.insert (Tr.to_char_list h) tree in
       insert_all t new_tree
 
 let word_dict = create_dict "data/COMMON.TXT" []
