@@ -169,21 +169,24 @@ let rec print_autofill_sentence sent x_int y_int color =
         (String.sub rest_sent 1 (String.length rest_sent - 1))
         count y_int color
     else Lwt.return ()
+let is_printable c =
+      let code = Char.code c in
+      code >= 32 && code <= 126
+let remove_wd_characters str =
+        String.to_seq str
+        |> Seq.filter is_printable
+        |> String.of_seq
 
 (* let print_autofill_sentence_blocking sent x_int y_int color = Lwt_main.run
    (print_autofill_sentence sent x_int y_int color) *)
 
 let print_autofill_sentence_blocking sent x_int y_int color =
-  let rest_sent = Lwt_main.run (complete_sentence sent) in
+  let s = Lwt_main.run (complete_sentence sent) in
+  let rest_sent = remove_wd_characters s in
   if String.length rest_sent > 0 then (
     set_color color;
     moveto x_int y_int;
     draw_string rest_sent)
-
-(* let print_autofill_sentence_blocking sent x_int y_int color = let suggestions
-   = ["example"; "test"; "autocomplete"] in (* Simulate suggestions *) if
-   List.length suggestions > 0 then ( set_color color; moveto x_int y_int;
-   draw_string (String.concat ", " suggestions) (* Draw the suggestions *) ) *)
 
 (* let test_sentence_auto sent x_int y_int = print_autofill_sentence_blocking
    sent x_int y_int blue *)
@@ -212,6 +215,20 @@ let rec print_autofill rest_of_word x_int y_int color =
         (String.sub rest_of_word 1 (String.length rest_of_word - 1))
         count y_int color
     else ()
+
+let rec print_sent_autofill rest_of_sent x_int y_int color = 
+  if String.length rest_of_sent = 0 then ()
+  else
+    let count = x_int in
+    set_color color;
+    moveto count y_int;
+    draw_string (String.make 1 rest_of_sent.[0]);
+    if String.length rest_of_sent > 1 then
+      print_sent_autofill
+        (String.sub rest_of_sent 1 (String.length rest_of_sent - 1))
+        count y_int color
+    else ()
+
 
 (**[basic_window ()] creates a blank GUI*)
 let basic_window () =
@@ -469,10 +486,11 @@ let overflow_rectangle () =
   fill_rect (((1920 - 800) / 2) + 800) ((1080 - 800) / 2) 200 750
 
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-    accum_sentence word_index sent =
+    accum_sentence word_index sent last_sent_suggest =
   print_endline ("sentence is " ^ sent);
   print_endline ("accum is [" ^ accum ^ "]");
   print_endline ("accum_sentence is "^hashtable_to_string accum_sentence);
+  print_endline("accum_sent is "^ hashtable_to_string accum_sent);
   let max_x_bound = 1300 in
   let line_height = 20 in
   synchronize ();
@@ -491,6 +509,12 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   else if c = '\027' then begin close_graph (); 
   exit 0;  end
   else if c = '\t' then ()
+    (*begin if Hashtbl.find accum_sent word_index = " " then begin
+    print_endline("here in the conditional");
+    let old_suggest = last_sent_suggest in
+    print_sent_autofill old_suggest x_int y_int black;
+    set_color (rgb 0 228 226); 
+  end *)
   else if c = '\x08' then begin
     set_color (rgb 229 228 226);
     fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
@@ -501,15 +525,24 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         String.sub sent 0 (String.length sent -1)
       in 
     print_to_screen_sentence accum (x_int - 7) y_int counter x_off_word
-      accum_sent accum_sentence word_index sent
+      accum_sent accum_sentence word_index sent ""
   end
   else if c = ' ' then begin
-    set_color (rgb 0 228 226);
-    fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
-    let rest_sent = Lwt_main.run (complete_sentence sent) in
-    print_endline ("rest of sentence is " ^ rest_sent);
-    print_autofill_sentence_blocking sent (x_int+7) y_int red; 
-
+      if Hashtbl.find accum_sent word_index = " " then begin
+        print_endline("here in the conditional");
+        set_color (rgb 229 228 226);
+        fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
+        print_endline("prompt is " ^sent);
+      print_autofill_sentence_blocking sent (x_int + 7) y_int red; 
+        let old_suggest = last_sent_suggest in
+      print_to_screen_sentence accum x_int y_int counter x_off_word
+      accum_sent accum_sentence (word_index) sent old_suggest
+      end
+      else begin
+      set_color (rgb 229 228 226);
+      fill_rect (x_int+5) y_int (max_x_bound + 56 - x_int-5) (line_height - 5);
+      print_autofill_sentence_blocking sent (x_int+7) y_int red; 
+      end
   end
   else ();
   print_endline ("old_suggestions are " ^ string_lis_to_string old_suggestions);
@@ -550,15 +583,8 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   (* print_autofill_sentence_blocking new_sent count y_offset red; *)
 
   (* Call the function recursively with the new accumulator *)
-  if c = ' ' then
-    let x_off_word =
-      if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
-    in
     print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-      accum_sent accum_sentence (word_index + 1) new_sent
-  else
-    print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-      accum_sent accum_sentence (word_index + 1) new_sent
+      accum_sent accum_sentence (word_index + 1) new_sent last_sent_suggest
 
 let rec print_to_screen_both accum x_int y_int counter x_off_word accum_sent accum_sentence
     word_index sent tree =

@@ -28,8 +28,10 @@ let payload prompt =
         `Assoc
           [
             ("max_new_tokens", `Int 10);
-            ("temperature", `Float 0.3);
-            ("top_p", `Float 0.8);
+            ("temperature", `Float 0.7);
+            ("top_p", `Float 0.9);
+            ("do_sample", `Bool true);
+            ("seed", `Int (Random.int 10000));
           ] );
     ]
 
