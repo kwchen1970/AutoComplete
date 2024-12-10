@@ -1,6 +1,6 @@
 open Group_proj
 open Group_proj.View
-include Tree.Trie
+include Trie
 module Tr = Trie
 
 type t = Tr.t

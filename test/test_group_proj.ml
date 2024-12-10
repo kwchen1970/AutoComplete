@@ -1,7 +1,5 @@
 open OUnit2
 open Group_proj
-include Tree.Trie
-include Tree.Dict
 
 let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
 
@@ -13,17 +11,17 @@ let rec print_str_list lst =
 
 let list_equal lst1 lst2 = List.sort compare lst1 = List.sort compare lst2
 
-module TrieTester (T : TRIE) = struct
+module TrieTester (T : module type of Trie) = struct
   include T
 
   (* Thread each [insert] function in [insert_all]. *)
   (* Add tests for capitalization, punctuation, words that are substrings or
      other words, multiple element words (not allowed, used regex to stop). *)
-  let rec insert_all word_list tree : T.t =
+  let rec insert_all word_list tree =
     match word_list with
     | [] -> tree
     | h :: t ->
-        let new_tree = insert (to_char_list h) tree in
+        let new_tree = T.insert (T.to_char_list h) tree in
         insert_all t new_tree
 
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
@@ -40,7 +38,7 @@ module TrieTester (T : TRIE) = struct
         "barple";
         "triangle";
       ]
-      empty
+      T.empty
 
   let make_insert_test expected word_lst =
     "" >:: fun _ ->
@@ -51,7 +49,7 @@ module TrieTester (T : TRIE) = struct
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
-    let all = all_words (insert_all word_lst empty) in
+    let all = T.all_words (insert_all word_lst T.empty) in
     assert_equal true (cmp expected all) ~printer:string_of_bool;
     (* Check if the length of [expected] >= number of word leaves in the tree
        containing words from [word_list]. *)
@@ -69,7 +67,7 @@ module TrieTester (T : TRIE) = struct
     in
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
-    let leaves = search (to_char_list prefix) tree in
+    let leaves = T.search (T.to_char_list prefix) tree in
 
     (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
        leaves); *)
@@ -95,7 +93,7 @@ module TrieTester (T : TRIE) = struct
         "barple";
         "triangle";
       ]
-      empty
+      T.empty
 
   (* Test suite that tests [insert]. *)
   let make_tree_tests =
@@ -116,21 +114,20 @@ module TrieTester (T : TRIE) = struct
          ]
        in
        let word_tree =
-         refresh_priorities;
-         insert_all word_lst empty
+         T.refresh_priorities;
+         insert_all word_lst T.empty
        in
-       let _ =
-         refresh_priorities;
-         make_insert_test word_lst word_lst
-       in
+       let _ = make_insert_test word_lst word_lst in
        let _ = make_search_test [ "apple"; "appol"; "appla" ] "app" word_tree in
        let _ =
-         make_search_test (all_words (insert_all word_lst empty)) "" word_tree
+         make_search_test
+           (T.all_words (insert_all word_lst T.empty))
+           "" word_tree
        in
        let _ = make_search_test [ "bapple"; "barple" ] "b" word_tree in
        make_search_test [ "triangle" ] "triangl" word_tree);
-      make_search_test [] "" empty;
-      (let wood_dict = create_dict "../data/COMMON.TXT" [] in
+      make_search_test [] "" T.empty;
+      (let wood_dict = Dict.create_dict "../data/COMMON.TXT" [] in
        let wood_lst =
          [
            "wood alcohol";
@@ -157,11 +154,10 @@ module TrieTester (T : TRIE) = struct
            "wood warbler";
          ]
        in
-       let word_tree = insert_all wood_dict empty in
+       let word_tree = insert_all wood_dict T.empty in
 
        make_search_test wood_lst "wood " word_tree);
-      (refresh_priorities;
-       let wood_lst =
+      (let wood_lst =
          [
            "wood alcohol";
            "wood anemone";
@@ -177,7 +173,7 @@ module TrieTester (T : TRIE) = struct
            "wood warbler";
          ]
        in
-       let word_tree = insert_all wood_lst empty in
+       let word_tree = insert_all wood_lst T.empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        make_search_test (List.rev wood_lst) "wood " word_tree);
       (let tree = T.empty in
@@ -196,7 +192,7 @@ module TrieTester (T : TRIE) = struct
            "wood warbler";
          ]
        in
-       let word_tree = insert_all wood_lst empty in
+       let word_tree = insert_all wood_lst T.empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        let word_tree = T.remove "wood anemone" word_tree in
        let word_tree = T.remove "wood" word_tree in
@@ -314,7 +310,7 @@ module NGramTester (C : module type of NgramColl) = struct
     ]
 end
 
-module RBTreeTester (RB : module type of Tree.Rbtree) = struct
+module RBTreeTester (RB : module type of Rbtree) = struct
   include RB
 
   let cmp (k1, p1) (k2, p2) = p1 - p2
@@ -432,7 +428,7 @@ module RBTreeTester (RB : module type of Tree.Rbtree) = struct
       ~printer:(List.fold_left (fun acc elem -> acc ^ " " ^ elem) "")
 
   let arb_word =
-    let possible_words = create_dict "../data/COMMON.TXT" [] in
+    let possible_words = Dict.create_dict "../data/COMMON.TXT" [] in
     QCheck.(
       map
         (fun (k_index, p) -> (List.nth possible_words k_index, p))
@@ -590,10 +586,11 @@ module RBTreeTester (RB : module type of Tree.Rbtree) = struct
     ]
 end
 
-module DictTester (D : module type of Tree.Dict) = struct
+module DictTester (D : module type of Dict) = struct
   include D
 
   let make_error_test func error = "" >:: fun _ -> assert_raises error func
+  (* let make_create_dict_test = failwith "TODO" *)
 
   let make_dict_test =
     [
@@ -606,8 +603,8 @@ end
 module TrieTest = TrieTester (Trie)
 
 (* module NGramTest = NGramTester (NgramColl) *)
-module RBTreeTest = RBTreeTester (Tree.Rbtree)
-module DictTest = DictTester (Tree.Dict)
+module RBTreeTest = RBTreeTester (Rbtree)
+module DictTest = DictTester (Dict)
 
 let test_suite =
   "test suite"

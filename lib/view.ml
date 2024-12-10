@@ -1,7 +1,7 @@
 open Graphics
-include Tree.Trie
+include Trie
 module Tr = Trie
-include Tree.Dict
+include Dict
 open Inference
 include Lwt.Infix
 
@@ -386,7 +386,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     in
     if List.length suggestions > 0 then
       let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset red)
+      print_autofill rest_of_word count y_offset red
     else ()
   else draw_string " ";
 
