@@ -10,7 +10,6 @@ exception Empty
 
 val empty : t
 (** [empty] is the empty Trie tree *)
-
 val refresh_priorities : unit
 val return_pqueue : unit -> (string * int) Rbtree.t
 val pqueue_to_string : (string * int) Rbtree.t -> string

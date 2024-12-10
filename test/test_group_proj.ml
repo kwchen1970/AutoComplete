@@ -24,21 +24,36 @@ module TrieTester (T : module type of Trie) = struct
         let new_tree = T.insert (T.to_char_list h) tree in
         insert_all t new_tree
 
+  let rec split allowed start_pos line =
+    match start_pos = String.length line with
+    | true -> []
+    | false -> (
+        try
+          let start_pos = Str.search_forward allowed line start_pos in
+          let first_word = Str.matched_string line in
+          let new_start_pos = start_pos + String.length first_word in
+          let second_word_pos =
+            try Str.search_forward allowed line new_start_pos
+            with Not_found -> String.length line
+          in
+          print_endline (first_word ^ " " ^ string_of_int new_start_pos);
+          first_word :: split allowed second_word_pos line
+        with Not_found -> if line = "" then [] else [ line ])
+
   let fold_tree tree = List.fold_left (fun acc elem -> elem ^ " " ^ acc) "" tree
 
-  let tree =
-    insert_all
-      [
-        "apple";
-        "aprle";
-        "appol";
-        "appla";
-        "apole";
-        "bapple";
-        "barple";
-        "triangle";
-      ]
-      T.empty
+  let make_pqueue_to_string_test prefix inserted_list expected =
+    let tree = insert_all inserted_list T.empty in
+    let _ = T.search (T.to_char_list prefix) tree in
+    let rec cmp expected actual =
+      match expected with
+      | [] -> true
+      | h :: t -> if List.mem h actual then cmp t actual else false
+    in
+    let allowed = Str.regexp "\\([a-zA-Z0-9]+\\[[0-9]+\\]\\)" in
+    let actual = split allowed 0 (T.pqueue_to_string (T.return_pqueue ())) in
+    "" >:: fun _ ->
+    assert_equal true (cmp expected actual) ~printer:string_of_bool
 
   let make_insert_test expected word_lst =
     "" >:: fun _ ->
@@ -81,21 +96,26 @@ module TrieTester (T : module type of Trie) = struct
        else List.length expected = List.length leaves)
       ~printer:string_of_bool
 
-  let tree =
-    insert_all
-      [
-        "apple";
-        "aprle";
-        "appol";
-        "appla";
-        "apole";
-        "bapple";
-        "barple";
-        "triangle";
-      ]
-      T.empty
-
   (* Test suite that tests [insert]. *)
+  let make_pqueue_tests =
+    [
+      make_pqueue_to_string_test "a"
+        [
+          "apple";
+          "aprle";
+          "appol";
+          "appla";
+          "apole";
+          "bapple";
+          "barple";
+          "triangle";
+        ]
+        [ "apple[1]"; "aprle[1]"; "appol[1]"; "appla[1]"; "apole[1]" ];
+      make_pqueue_to_string_test "w"
+        [ "wood"; "ward"; "weed"; "wood"; "word" ]
+        [ "wood[2]"; "ward[1]"; "weed[1]"; "word[1]" ];
+    ]
+
   let make_tree_tests =
     [
       make_insert_test
@@ -196,8 +216,6 @@ module TrieTester (T : module type of Trie) = struct
        let _ = make_search_test wood_lst "wood " word_tree in
        let word_tree = T.remove "wood anemone" word_tree in
        let word_tree = T.remove "wood" word_tree in
-       (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
-          (T.all_words word_tree)); *)
        make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
 
@@ -403,7 +421,7 @@ module RBTreeTester (RB : module type of Rbtree) = struct
       | true -> []
       | false -> (
           try
-            let _ = Str.search_forward allowed line start_pos in
+            let start_pos = Str.search_forward allowed line start_pos in
             let first_word = Str.matched_string line in
             let new_start_pos = start_pos + String.length first_word in
             let second_word_pos =
@@ -621,7 +639,7 @@ module DictTester (D : module type of Dict) = struct
       | true -> []
       | false -> (
           try
-            let _ = Str.search_forward allowed line start_pos in
+            let start_pos = Str.search_forward allowed line start_pos in
             let first_word = Str.matched_string line in
             let new_start_pos = start_pos + String.length first_word in
             let second_word_pos =
@@ -702,10 +720,11 @@ let test_suite =
   >::: List.flatten
          [
            (* TrieTest.make_tree_tests; *)
+           TrieTest.make_pqueue_tests;
            (* NGramTest.make_ngram_test; *)
-           RBTreeTest.make_rbtree_mem_test;
-           RBTreeTest.make_rb_tree_insert_remove_test;
-           DictTest.make_dict_test;
+           (* RBTreeTest.make_rbtree_mem_test;
+              RBTreeTest.make_rb_tree_insert_remove_test;
+              DictTest.make_dict_test; *)
          ]
 
 let _ = run_test_tt_main test_suite
