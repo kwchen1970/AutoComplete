@@ -1,10 +1,6 @@
 (library
  (name group_proj)
  (libraries batteries str graphics core_kernel.pairing_heap lwt.unix cohttp-lwt-unix yojson lambdasoup)
- (libraries batteries str graphics core_kernel.pairing_heap lwt.unix cohttp-lwt-unix yojson lambdasoup)
  (preprocess (pps lwt_ppx))
- 
- (instrumentation (backend bisect_ppx))
- 
  (instrumentation (backend bisect_ppx))
  )
