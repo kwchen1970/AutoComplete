@@ -1,5 +1,4 @@
 (test
  (name test_group_proj)
  (libraries ounit2 group_proj batteries graphics qcheck)
- (libraries ounit2 group_proj batteries graphics qcheck)
  (deps (glob_files_rec ../data/*)))

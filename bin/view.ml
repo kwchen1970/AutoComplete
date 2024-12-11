@@ -220,11 +220,9 @@ let rec print_autofill rest_of_word x_int y_int color =
 
 let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min
     line_height =
-  print_endline "In PRINT_AUTOFILL start";
   print_endline ("rest_of_sent is " ^ rest_of_sent);
   if String.length rest_of_sent = 0 then (x_int, y_int)
-  else (
-    print_endline "IN PRINT_SENT_AUTOFILL else branch";
+  else
     let count = x_int + 6 in
     let count2, y_int =
       if count > x_max then (x_min, y_int - line_height) else (count, y_int)
@@ -236,7 +234,7 @@ let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min
       print_sent_autofill
         (String.sub rest_of_sent 1 (String.length rest_of_sent - 1))
         count2 y_int color x_max x_min line_height)
-    else (count, y_int))
+    else (count, y_int)
 
 (**[basic_window ()] creates a blank GUI*)
 let basic_window () =
@@ -374,7 +372,7 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int black;
       let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" (count - 60) y_int (count - 60) x_off_word accum_sent
+      print_to_screen "" count y_int (count + 4) x_off_word accum_sent
         accum_sentence word_index sent tree)
     else ()
   else if c = '\x08' then begin
@@ -537,7 +535,7 @@ let load_ppm filename =
 
 let overflow_rectangle () =
   set_color white;
-  fill_rect (((1920 - 800) / 2) + 800) ((1080 - 800) / 2) 200 750
+  fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50) 200 750
 
 let sent_comp = ref ""
 let x_int_from_tab = ref 0
@@ -545,8 +543,15 @@ let y_int_from_tab = ref 0
 let first_tup (x, _) = x
 let sec_tup (_, x) = x
 
+let insert_string_to_hash s x hash =
+  let x1 = x + 1 in
+  let len = String.length s in
+  for i = 0 to len - 1 do
+    Hashtbl.replace hash (x1 + i) (String.make 1 s.[i])
+  done
+
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-    accum_sentence word_index sent last_sent_suggest =
+    accum_sentence word_index sent last_sent_suggest tab_before =
   print_endline ("sentence is " ^ sent);
   print_endline ("accum is [" ^ accum ^ "]");
   print_endline ("accum_sentence is " ^ hashtable_to_string accum_sentence);
@@ -563,47 +568,61 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   let c = event.key in
   if c = ' ' then overflow_rectangle ();
 
-  if c = '.' || c = '!' || c = '?' then
+  if c = '.' || c = '!' || c = '?' then begin
     Hashtbl.add accum_sentence word_index sent
+  end
   else if c = '\027' then begin
     close_graph ();
     exit 0
   end
   else if c = '\t' then begin
-    set_color (rgb 229 0 226);
-    (* Fill the rectangle with white to clear it *)
-    fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
-    print_endline "In the TAB LOOP";
-    if Hashtbl.find accum_sent word_index = " " then
-      print_endline "here in the conditional";
-    let old_suggest = last_sent_suggest in
-    x_int_from_tab :=
-      first_tup
-        (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound 580
-           line_height);
-    y_int_from_tab :=
-      sec_tup
-        (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound 580
-           line_height);
-    (* moveto count y_int; *)
-    let count, y_offset =
-      if !x_int_from_tab >= max_x_bound then (580, !y_int_from_tab)
-      else (!x_int_from_tab + 7, !y_int_from_tab)
-    in
-    print_to_screen_sentence "" count y_offset (count + 4) x_off_word accum_sent
-      accum_sentence word_index sent ""
+    if tab_before = 1 then begin
+      print_endline "IN BEEN BEFORE =1";
+      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+        accum_sentence word_index sent last_sent_suggest 0
+    end
+    else begin
+      print_endline "In BEEN_BEFORE = 0 bad part";
+      set_color (rgb 229 0 226);
+      (* Fill the rectangle with white to clear it *)
+      fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
+      print_endline "In the TAB LOOP";
+      if Hashtbl.find accum_sent word_index = " " then
+        print_endline "here in the conditional";
+      let old_suggest = last_sent_suggest in
+      x_int_from_tab :=
+        first_tup
+          (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound
+             580 line_height);
+      y_int_from_tab :=
+        sec_tup
+          (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound
+             580 line_height);
+      insert_string_to_hash
+        (String.sub old_suggest 1 (String.length old_suggest - 1))
+        word_index accum_sent;
+      let new_sent = sent ^ " " ^ old_suggest in
+      let count, y_offset =
+        if !x_int_from_tab >= max_x_bound then (580, !y_int_from_tab)
+        else (!x_int_from_tab + 7, !y_int_from_tab)
+      in
+      let last_sent_sugg = old_suggest in
+      print_to_screen_sentence "" count y_offset (count + 4) x_off_word
+        accum_sent accum_sentence word_index new_sent last_sent_sugg 1
+    end
   end
   else if c = '\x08' then begin
     set_color (rgb 229 228 226);
     let width = max_x_bound + 56 - x_int in
     let height = line_height - 5 in
     if width > 0 && height > 0 then fill_rect x_int y_int width height else ();
+    Hashtbl.remove accum_sent word_index;
     let sent =
       if String.length sent = 0 then ""
       else String.sub sent 0 (String.length sent - 1)
     in
     print_to_screen_sentence accum (x_int - 7) y_int counter x_off_word
-      accum_sent accum_sentence word_index sent ""
+      accum_sent accum_sentence (word_index - 1) sent "" 0
   end
   else if c = ' ' then begin
     if Hashtbl.find accum_sent word_index = " " then begin
@@ -614,9 +633,8 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         (line_height - 5);
       print_endline ("prompt is " ^ sent);
       sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red;
-      let old_suggest = last_sent_suggest in
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-        accum_sentence word_index sent old_suggest
+        accum_sentence word_index sent !sent_comp 0
     end
     else begin
       set_color (rgb 229 228 226);
@@ -660,7 +678,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
 
   (* Call the function recursively with the new accumulator *)
   print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-    accum_sent accum_sentence (word_index + 1) new_sent !sent_comp
+    accum_sent accum_sentence (word_index + 1) new_sent !sent_comp 0
 
 let rec print_to_screen_both accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent tree =
