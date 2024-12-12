@@ -22,7 +22,6 @@ let priorities = ref (Hashtbl.create 20)
 
 (* Red-black tree that stores (priority, word) in order of smallest to greatest
    priority. *)
-let refresh_priorities = priorities := Hashtbl.create 20
 let pqueue = ref Rbtree.empty
 let return_pqueue () = !pqueue
 
@@ -51,8 +50,6 @@ let get_tree (Node (_, _, tree)) = tree
 let to_char_list word =
   List.of_seq (String.to_seq (String.lowercase_ascii word))
 
-(* [insert char_list tree] is a function that inserts the word represented by
-   [char_list] into the Trie tree [tree]. *)
 let insert_new char_list (Node (is_word, priority, tree)) =
   let rec insert_p char_list (Node (is_word, priority, tree)) prefix =
     match char_list with
@@ -80,14 +77,13 @@ let insert char_list (Node (is_word, priority, tree) as trie) =
   let new_tree = insert_new char_list trie in
   new_tree
 
-let rec prepend prefix lst acc =
-  match lst with
-  | [] -> acc
-  | h :: t -> prepend prefix t ((prefix ^ h) :: acc)
-
-(* For all keys in tree, continuting traversing through value pointed to by key
-   if value != empty, else return key. *)
-
+(** [search_all (Node (is_word, priority, tree))] is a helper function of
+    [search] that continues searching through the Trie tree for words after
+    [search] has reached the Node with given prefix [prefix]. For all word
+    strings where [is_word = true] with prefix [prefix] that is traversed,
+    [search_all] adds these words to the priority queue [pqueue]. [search_all]
+    does not return anything, instead, it updates [pqueue] to include all words
+    with prefix [prefix].*)
 let rec search_all (Node (is_word, priority, tree)) =
   let pairs = StringMap.bindings tree in
   let rec search_pairs pairs =
@@ -119,17 +115,20 @@ let search prefix_list (Node (is_word, priority, tree)) =
       let rec search_p prefix_list (Node (is_word, priority, tree)) prefix =
         match prefix_list with
         | [] ->
-            (* [last_visited] is the Node where key = last character in
-               [prefix_list] *)
+            let cmp (k1, p1) (k2, p2) = p1 - p2 in
             last_visited := (!last_prefix, Node (is_word, priority, tree));
-            if is_empty (Node (is_word, priority, tree)) then ()
-            else if is_word then (
-              let cmp (k1, p1) (k2, p2) = p1 - p2 in
-              pqueue :=
-                Rbtree.insert
-                  (prefix, Hashtbl.find !priorities prefix)
-                  !pqueue cmp;
-              search_all (Node (is_word, priority, tree)))
+            if is_word then
+              if is_empty (Node (is_word, priority, tree)) then
+                pqueue :=
+                  Rbtree.insert
+                    (prefix, Hashtbl.find !priorities prefix)
+                    !pqueue cmp
+              else (
+                pqueue :=
+                  Rbtree.insert
+                    (prefix, Hashtbl.find !priorities prefix)
+                    !pqueue cmp;
+                search_all (Node (is_word, priority, tree)))
             else search_all (Node (is_word, priority, tree))
         | h :: t ->
             let prefix = prefix ^ String.make 1 h in
@@ -184,6 +183,12 @@ let remove word (Node (is_word, priority, tree) as trie) =
 let all_words (Node (is_word, priority, tree)) =
   search (to_char_list "") (Node (is_word, priority, tree))
 
+(** [traverse_all (Node (is_word, priority, tree)) depth] is a helper function
+    of [to_string] that continues searching through the Trie tree for words
+    after [to_string] has reached the Node with given prefix [prefix]. For all
+    word strings where [is_word = true] with prefix [prefix] that is traversed,
+    [traverse_all] adds the prefix "WORD:" in front of these words to
+    differentiate. *)
 let rec traverse_all (Node (is_word, priority, tree)) depth =
   let pairs = StringMap.bindings tree in
   let rec search_pairs pairs =
@@ -194,12 +199,13 @@ let rec traverse_all (Node (is_word, priority, tree)) depth =
         let a = search_pairs t in
         if StringMap.cardinal (get_tree (StringMap.find key tree)) != 0 then
           if is_word then
-            "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ " -> "
+            "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ ") -> "
             ^ traverse_all (StringMap.find key tree) (depth + 1)
+            ^ a
           else
             "\n" ^ string_of_int depth ^ " : (" ^ key ^ " -> "
             ^ traverse_all (StringMap.find key tree) (depth + 1)
-            ^ ")"
+            ^ a ^ ")"
         else "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ ")" ^ a
   in
   search_pairs pairs
