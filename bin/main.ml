@@ -1,5 +1,6 @@
 open Group_proj
 open View
+open Group_proj.Button
 include Group_proj.Trie
 module Tr = Trie
 include Group_proj.Dict

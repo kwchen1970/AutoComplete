@@ -10,6 +10,14 @@ type t = Tr.t
 
 let empt = Tr.empty
 
+type button = {
+  name : string;
+  action : string -> string;
+  enabled : bool;
+}
+
+let enabled b = b.enabled
+
 let string_list_to_string lst =
   String.concat "" lst (* Concatenates the list with no separator *)
 
@@ -334,6 +342,50 @@ let save_text_to_file filename text =
    mouse.button in let x, y = mouse_pos () in if on_save_button x y && m then
    save_text_to_file "output.txt" sent else () *)
 
+let read_file filename =
+  let channel = open_in filename in
+  try
+    let length = in_channel_length channel in
+    let content = really_input_string channel length in
+    close_in channel;
+    content
+  with e ->
+    close_in_noerr channel;
+    raise e
+
+let load_file filename =
+  let text = read_file filename in
+  let rec aux x y i word_i accum accum_sent =
+    if i = String.length text - 1 then ()
+    else begin
+      (* x = 560; y = 140; w=h=800 -- bottom left *)
+      let c = String.get text i in
+      if x >= 1360 then begin
+        Hashtbl.add accum_sent i c;
+        moveto 560 (y + 5);
+        draw_char c;
+        if c = ' ' then begin
+          Hashtbl.clear accum;
+          aux 560 (y + 5) (i + 1) 0 accum accum_sent
+        end
+        else Hashtbl.add accum word_i c;
+        aux 560 (y + 5) (i + 1) (word_i + 1) accum accum_sent
+      end
+      else begin
+        Hashtbl.add accum_sent i c;
+        moveto (x + 5) y;
+        draw_char c;
+        if c = ' ' then begin
+          Hashtbl.clear accum;
+          aux (x + 5) y (i + 1) 0 accum accum_sent
+        end
+        else Hashtbl.add accum word_i c;
+        aux (x + 5) y (i + 1) (word_i + 1) accum accum_sent
+      end
+    end
+  in
+  aux 560 940 0 0 (Hashtbl.create 5) (Hashtbl.create 5)
+
 (**[print_to_screen accum x_int y_int counter] prints the suggestions and
    present typing to screen*)
 let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
@@ -349,126 +401,148 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
   (* print_endline("old_suggestions is "^string_lis_to_string (Tr.search
      (string_to_char_list accum) tree)); *)
   (* Get the current character input *)
-  let event = wait_next_event [ Key_pressed ] in
-  let c = event.key in
-
-  (* if you press ctrl c you should inesrt what you typed so far into the trie
-     tree*)
-  let tree =
-    if c = '\003' then Tr.insert_new (string_to_char_lis accum) tree else tree
-  in
-  let c = if c = '\003' then ' ' else c in
-  let old_suggestions =
-    if String.length accum > 0 then Tr.search (string_to_char_list accum) tree
-    else []
-  in
-  if c = '.' || c = '!' || c = '?' then
-    Hashtbl.add accum_sentence word_index sent
-    (* else if c = '\x13' then save_text_to_file "output.txt" sent *)
-  else if c = '\027' then begin
-    close_graph ();
-    exit 0
+  let event = wait_next_event [ Button_down; Key_pressed ] in
+  if event.button then begin
+    let click_x = event.mouse_x in
+    let click_y = event.mouse_y in
+    if is_inside (click_x, click_y) (300, 700) 100 50 then
+      (* save button *)
+      let str = hashtable_to_string2 accum_sent in
+      if String.length str > 0 then
+        save_text_to_file "data/output.txt"
+          (String.sub str 0 (String.length str - 1))
+      else save_text_to_file "data/output.txt" ""
+    else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
+    then print_endline "clicked retrieve"
+    else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
+      print_endline "clicked 3rd button"
+    else print_endline "clicked outside"
   end
-  else if c = '\t' && String.length accum > 0 then
-    if List.length old_suggestions > 0 then (
-      let rest_of_word = autofill accum old_suggestions in
-      print_autofill rest_of_word x_int y_int black;
-      let count = x_int + (7 * String.length rest_of_word) in
-      print_to_screen "" (count - 60) y_int (count - 60) x_off_word accum_sent
-        accum_sentence word_index sent tree)
-    else ()
-  else if c = '\x08' then begin
-    set_color (rgb 229 228 226);
-    fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
-    if Hashtbl.mem accum_sent word_index then begin
-      Hashtbl.remove accum_sent word_index
-    end
-    else ();
-    let new_accum =
-      if accum = "" then accum else String.sub accum 0 (String.length accum - 1)
+  else begin
+    let c = event.key in
+
+    (* if you press ctrl c you should inesrt what you typed so far into the trie
+       tree*)
+    let tree =
+      if c = '\003' then Tr.insert_new (string_to_char_lis accum) tree else tree
     in
+    let c = if c = '\003' then ' ' else c in
+    let old_suggestions =
+      if String.length accum > 0 then Tr.search (string_to_char_list accum) tree
+      else []
+    in
+    if c = '.' || c = '!' || c = '?' then
+      Hashtbl.add accum_sentence word_index sent
+      (* else if c = '\x13' then save_text_to_file "output.txt" sent *)
+    else if c = '\027' then begin
+      close_graph ();
+      exit 0
+    end
+    else if c = '\t' && String.length accum > 0 then
+      if List.length old_suggestions > 0 then (
+        let rest_of_word = autofill accum old_suggestions in
+        print_autofill rest_of_word x_int y_int black;
+        let count = x_int + (7 * String.length rest_of_word) in
+        print_to_screen "" (count - 60) y_int (count - 60) x_off_word accum_sent
+          accum_sentence word_index sent tree)
+      else ()
+    else if c = '\x08' then begin
+      set_color (rgb 229 228 226);
+      fill_rect x_int y_int (max_x_bound + 56 - x_int) (line_height - 5);
+      if Hashtbl.mem accum_sent word_index then begin
+        Hashtbl.remove accum_sent word_index
+      end
+      else ();
+      let new_accum =
+        if accum = "" then accum
+        else String.sub accum 0 (String.length accum - 1)
+      in
+      let suggestions =
+        if c <> ' ' then Tr.search (string_to_char_list new_accum) tree else []
+      in
+      if c = ' ' || new_accum = "" then
+        if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
+        else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
+        else no_suggest (x_int - 50) y_int
+      else print_suggestions1 suggestions x_int y_int x_off_word;
+      print_to_screen new_accum (x_int - 7) y_int counter x_off_word accum_sent
+        accum_sentence (word_index - 1) sent tree
+    end
+    else if List.length old_suggestions > 0 then (
+      let rest_of_word = autofill accum old_suggestions in
+      print_endline ("rest of word is " ^ rest_of_word);
+      print_autofill rest_of_word x_int y_int (rgb 229 228 226);
+      print_endline "autofilled already")
+    else ();
+    print_endline ("old_suggestions are " ^ string_lis_to_string old_suggestions);
+    (* Add word to accum_sentence if it is complete.*)
+    if c <> '\x08' && c <> '\027' then
+      Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
+    else ();
+    print_endline (hashtable_to_string accum_sent);
+    (* Append the character to the accumulator if it's not a space *)
+    let new_sent =
+      if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
+    in
+    (* Append the character to the accumulator if it's not a space *)
+    let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
     let suggestions =
       if c <> ' ' then Tr.search (string_to_char_list new_accum) tree else []
     in
-    if c = ' ' || new_accum = "" then
+    if c = ' ' then
       if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
       else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
       else no_suggest (x_int - 50) y_int
     else print_suggestions1 suggestions x_int y_int x_off_word;
-    print_to_screen new_accum (x_int - 7) y_int counter x_off_word accum_sent
-      accum_sentence (word_index - 1) sent tree
+    print_endline ("suggestions are " ^ string_lis_to_string suggestions);
+    if (580 < x_int && x_int < 590) && y_int < 855 then (
+      (* set_color (rgb 0 0 224); *)
+      set_color (rgb 255 182 193);
+      fill_rect
+        (max_x_bound - 190) (* Same X-offset as print_suggestions1 *)
+        (y_int - 230) (* Ensure it covers the max vertical space *)
+        250 (* Width matching print_suggestions1 *)
+        240);
+    if c = '\x13' then begin
+      let str = hashtable_to_string2 accum_sent in
+      if String.length str > 0 then
+        save_text_to_file "data/output.txt"
+          (String.sub str 0 (String.length str - 1))
+      else save_text_to_file "data/output.txt" ""
+    end;
+
+    let count, y_offset =
+      if x_int >= max_x_bound then (580, y_int - line_height)
+      else (x_int + 7, y_int)
+    in
+    (* Display the current typed characters *)
+    set_color black;
+    moveto count y_offset;
+    print_endline "before the draw_string";
+    print_endline ("new_accum is " ^ new_accum);
+    if String.length new_accum > 0 then
+      let () =
+        draw_string (String.make 1 new_accum.[String.length new_accum - 1])
+      in
+      if List.length suggestions > 0 then
+        let rest_of_word = autofill new_accum suggestions in
+        print_autofill rest_of_word count y_offset red
+      else ()
+    else draw_string " ";
+
+    print_endline "end of autofill part";
+
+    (* Call the function recursively with the new accumulator *)
+    if c = ' ' then
+      let x_off_word =
+        if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
+      in
+      print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
+        accum_sentence (word_index + 1) new_sent tree
+    else
+      print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
+        accum_sentence (word_index + 1) new_sent tree
   end
-  else if List.length old_suggestions > 0 then (
-    let rest_of_word = autofill accum old_suggestions in
-    print_endline ("rest of word is " ^ rest_of_word);
-    print_autofill rest_of_word x_int y_int (rgb 229 228 226);
-    print_endline "autofilled already")
-  else ();
-  print_endline ("old_suggestions are " ^ string_lis_to_string old_suggestions);
-  (* Add word to accum_sentence if it is complete.*)
-  if c <> '\x08' && c <> '\027' then
-    Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
-  else ();
-  print_endline (hashtable_to_string accum_sent);
-  (* Append the character to the accumulator if it's not a space *)
-  let new_sent =
-    if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
-  in
-  (* Append the character to the accumulator if it's not a space *)
-  let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-  let suggestions =
-    if c <> ' ' then Tr.search (string_to_char_list new_accum) tree else []
-  in
-  if c = ' ' then
-    if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
-    else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
-    else no_suggest (x_int - 50) y_int
-  else print_suggestions1 suggestions x_int y_int x_off_word;
-  print_endline ("suggestions are " ^ string_lis_to_string suggestions);
-  if (580 < x_int && x_int < 590) && y_int < 855 then (
-    (* set_color (rgb 0 0 224); *)
-    set_color (rgb 255 182 193);
-    fill_rect
-      (max_x_bound - 190) (* Same X-offset as print_suggestions1 *)
-      (y_int - 230) (* Ensure it covers the max vertical space *)
-      250 (* Width matching print_suggestions1 *)
-      240);
-  if c = '\x13' then begin
-    let str = hashtable_to_string2 accum_sent in
-    save_text_to_file "output.txt" (String.sub str 0 (String.length str - 1))
-  end;
-
-  let count, y_offset =
-    if x_int >= max_x_bound then (580, y_int - line_height)
-    else (x_int + 7, y_int)
-  in
-  (* Display the current typed characters *)
-  set_color black;
-  moveto count y_offset;
-  print_endline "before the draw_string";
-  print_endline ("new_accum is " ^ new_accum);
-  if String.length new_accum > 0 then
-    let () =
-      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
-    in
-    if List.length suggestions > 0 then
-      let rest_of_word = autofill new_accum suggestions in
-      print_autofill rest_of_word count y_offset red
-    else ()
-  else draw_string " ";
-
-  print_endline "end of autofill part";
-
-  (* Call the function recursively with the new accumulator *)
-  if c = ' ' then
-    let x_off_word =
-      if x_int > max_x_bound - 190 then max_x_bound - 190 else x_int
-    in
-    print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
-      accum_sentence (word_index + 1) new_sent tree
-  else
-    print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
-      accum_sentence (word_index + 1) new_sent tree
 
 let print_to_screen_1 accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent =
@@ -559,108 +633,130 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       Tr.search (string_to_char_list accum) full_tree
     else []
   in
-  let event = wait_next_event [ Key_pressed ] in
-  let c = event.key in
-  if c = ' ' then overflow_rectangle ();
-
-  if c = '.' || c = '!' || c = '?' then
-    Hashtbl.add accum_sentence word_index sent
-  else if c = '\027' then begin
-    close_graph ();
-    exit 0
-  end
-  else if c = '\t' then begin
-    set_color (rgb 229 0 226);
-    (* Fill the rectangle with white to clear it *)
-    fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
-    print_endline "In the TAB LOOP";
-    if Hashtbl.find accum_sent word_index = " " then
-      print_endline "here in the conditional";
-    let old_suggest = last_sent_suggest in
-    x_int_from_tab :=
-      first_tup
-        (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound 580
-           line_height);
-    y_int_from_tab :=
-      sec_tup
-        (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound 580
-           line_height);
-    (* moveto count y_int; *)
-    let count, y_offset =
-      if !x_int_from_tab >= max_x_bound then (580, !y_int_from_tab)
-      else (!x_int_from_tab + 7, !y_int_from_tab)
-    in
-    print_to_screen_sentence "" count y_offset (count + 4) x_off_word accum_sent
-      accum_sentence word_index sent ""
-  end
-  else if c = '\x08' then begin
-    set_color (rgb 229 228 226);
-    let width = max_x_bound + 56 - x_int in
-    let height = line_height - 5 in
-    if width > 0 && height > 0 then fill_rect x_int y_int width height else ();
-    let sent =
-      if String.length sent = 0 then ""
-      else String.sub sent 0 (String.length sent - 1)
-    in
-    print_to_screen_sentence accum (x_int - 7) y_int counter x_off_word
-      accum_sent accum_sentence word_index sent ""
-  end
-  else if c = ' ' then begin
-    if Hashtbl.find accum_sent word_index = " " then begin
-      print_endline "here in the conditional";
-      set_color (rgb 229 228 226);
-      fill_rect (x_int + 5) y_int
-        (max_x_bound + 56 - x_int - 5)
-        (line_height - 5);
-      print_endline ("prompt is " ^ sent);
-      sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red;
-      let old_suggest = last_sent_suggest in
+  let event = wait_next_event [ Button_down; Key_pressed ] in
+  if event.button then begin
+    print_endline "button pressed";
+    let click_x = event.mouse_x in
+    let click_y = event.mouse_y in
+    if is_inside (click_x, click_y) (300, 700) 100 50 then
+      (* save button *)
+      let () = print_endline "clicked save" in
+      let str = hashtable_to_string2 accum_sent in
+      if String.length str > 0 then
+        save_text_to_file "data/output.txt"
+          (String.sub str 0 (String.length str - 1))
+      else save_text_to_file "data/output.txt" ""
+    else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
+    then print_endline "clicked retrieve"
+    else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
+      print_endline "clicked button 3"
+    else
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-        accum_sentence word_index sent old_suggest
-    end
-    else begin
-      set_color (rgb 229 228 226);
-      fill_rect (x_int + 5) y_int
-        (max_x_bound + 56 - x_int - 5)
-        (line_height - 5);
-      sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red
-    end
+        accum_sentence word_index sent last_sent_suggest
   end
-  else ();
-  print_endline ("old_suggestions are " ^ string_lis_to_string old_suggestions);
-  (* Add word to accum_sent if it is complete.*)
-  if c <> '\x08' && c <> '\027' then
-    Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
-  else ();
-  (* Append the character to the accumulator if it's not a space *)
-  let new_sent =
-    if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
-  in
-  let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
-  if String.length new_accum == 1 then begin
-    (* Set color to white to clear the rectangle *)
-    overflow_rectangle ();
-    set_color (rgb 50 205 50);
+  else begin
+    let c = event.key in
+    if c = ' ' then overflow_rectangle ();
 
-    (* Fill the rectangle with white to clear it *)
-    fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3)
-  end;
-  set_color black;
-  moveto (x_int + 2) y_int;
-  let count, y_offset =
-    if x_int >= max_x_bound then (580, y_int - line_height)
-    else (x_int + 7, y_int)
-  in
-  (* Display the current typed characters *)
-  set_color black;
-  moveto count y_offset;
-  if String.length new_accum > 0 then
-    draw_string (String.make 1 new_accum.[String.length new_accum - 1])
-  else draw_string " ";
+    if c = '.' || c = '!' || c = '?' then
+      Hashtbl.add accum_sentence word_index sent
+    else if c = '\027' then begin
+      close_graph ();
+      exit 0
+    end
+    else if c = '\t' then begin
+      set_color (rgb 229 0 226);
+      (* Fill the rectangle with white to clear it *)
+      fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
+      print_endline "In the TAB LOOP";
+      if Hashtbl.find accum_sent word_index = " " then
+        print_endline "here in the conditional";
+      let old_suggest = last_sent_suggest in
+      x_int_from_tab :=
+        first_tup
+          (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound
+             580 line_height);
+      y_int_from_tab :=
+        sec_tup
+          (print_sent_autofill old_suggest (x_int - 7) y_int black max_x_bound
+             580 line_height);
+      (* moveto count y_int; *)
+      let count, y_offset =
+        if !x_int_from_tab >= max_x_bound then (580, !y_int_from_tab)
+        else (!x_int_from_tab + 7, !y_int_from_tab)
+      in
+      print_to_screen_sentence "" count y_offset (count + 4) x_off_word
+        accum_sent accum_sentence word_index sent ""
+    end
+    else if c = '\x08' then begin
+      set_color (rgb 229 228 226);
+      let width = max_x_bound + 56 - x_int in
+      let height = line_height - 5 in
+      if width > 0 && height > 0 then fill_rect x_int y_int width height else ();
+      let sent =
+        if String.length sent = 0 then ""
+        else String.sub sent 0 (String.length sent - 1)
+      in
+      print_to_screen_sentence accum (x_int - 7) y_int counter x_off_word
+        accum_sent accum_sentence word_index sent ""
+    end
+    else if c = ' ' then begin
+      if Hashtbl.find accum_sent word_index = " " then begin
+        print_endline "here in the conditional";
+        set_color (rgb 229 228 226);
+        fill_rect (x_int + 5) y_int
+          (max_x_bound + 56 - x_int - 5)
+          (line_height - 5);
+        print_endline ("prompt is " ^ sent);
+        sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red;
+        let old_suggest = last_sent_suggest in
+        print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+          accum_sentence word_index sent old_suggest
+      end
+      else begin
+        set_color (rgb 229 228 226);
+        fill_rect (x_int + 5) y_int
+          (max_x_bound + 56 - x_int - 5)
+          (line_height - 5);
+        sent_comp := print_autofill_sentence_blocking sent (x_int + 7) y_int red
+      end
+    end
+    else ();
+    print_endline ("old_suggestions are " ^ string_lis_to_string old_suggestions);
+    (* Add word to accum_sent if it is complete.*)
+    if c <> '\x08' && c <> '\027' then
+      Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
+    else ();
+    (* Append the character to the accumulator if it's not a space *)
+    let new_sent =
+      if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
+    in
+    let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
+    if String.length new_accum == 1 then begin
+      (* Set color to white to clear the rectangle *)
+      overflow_rectangle ();
+      set_color (rgb 50 205 50);
 
-  (* Call the function recursively with the new accumulator *)
-  print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-    accum_sent accum_sentence (word_index + 1) new_sent !sent_comp
+      (* Fill the rectangle with white to clear it *)
+      fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3)
+    end;
+    set_color black;
+    moveto (x_int + 2) y_int;
+    let count, y_offset =
+      if x_int >= max_x_bound then (580, y_int - line_height)
+      else (x_int + 7, y_int)
+    in
+    (* Display the current typed characters *)
+    set_color black;
+    moveto count y_offset;
+    if String.length new_accum > 0 then
+      draw_string (String.make 1 new_accum.[String.length new_accum - 1])
+    else draw_string " ";
+
+    (* Call the function recursively with the new accumulator *)
+    print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
+      accum_sent accum_sentence (word_index + 1) new_sent !sent_comp
+  end
 
 let rec print_to_screen_both accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent tree =
