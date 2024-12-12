@@ -593,6 +593,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
   end
   else begin
     let c = event.key in
+    if tab_before = 1 && c = ' ' then
+      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+        accum_sentence word_index sent last_sent_suggest tab_before tree;
     let tree =
       if c = '\003' then Tr.insert_new (string_to_char_lis accum) tree else tree
     in
