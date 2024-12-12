@@ -10,7 +10,6 @@ exception Empty
 
 val empty : t
 (** [empty] is the empty Trie tree *)
-
 val refresh_priorities : unit
 val return_pqueue : unit -> (string * int) Rbtree.t
 val pqueue_to_string : (string * int) Rbtree.t -> string
@@ -26,9 +25,6 @@ val insert : char list -> t -> t
 (** [insert word tree prefix] is the Trie tree that results from inserting
     [word] into [tree]. *)
 
-val prepend : string -> string list -> string list -> string list
-(** [to_word_list tree] returns a list containing all the word leaves in the
-    Trie tree [tree]. *)
 
 val search : char list -> t -> string list
 (* val to_word_list :'a t-> word list *)

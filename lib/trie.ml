@@ -26,12 +26,6 @@ let refresh_priorities = priorities := Hashtbl.create 20
 let pqueue = ref Rbtree.empty
 let return_pqueue () = !pqueue
 
-type id = {
-  name : string;
-  major : string;
-  year : int;
-}
-
 (* Data of the rbtree are lists containing values of the same priority. *)
 let pqueue_to_string pqueue =
   Rbtree.to_string
@@ -86,10 +80,8 @@ let insert char_list (Node (is_word, priority, tree) as trie) =
   let new_tree = insert_new char_list trie in
   new_tree
 
-let rec prepend prefix lst acc =
-  match lst with
-  | [] -> acc
-  | h :: t -> prepend prefix t ((prefix ^ h) :: acc)
+(* let rec prepend prefix lst acc = match lst with | [] -> acc | h :: t ->
+   prepend prefix t ((prefix ^ h) :: acc) *)
 
 (* For all keys in tree, continuting traversing through value pointed to by key
    if value != empty, else return key. *)
@@ -127,15 +119,20 @@ let search prefix_list (Node (is_word, priority, tree)) =
         | [] ->
             (* [last_visited] is the Node where key = last character in
                [prefix_list] *)
+            let cmp (k1, p1) (k2, p2) = p1 - p2 in
             last_visited := (!last_prefix, Node (is_word, priority, tree));
-            if is_empty (Node (is_word, priority, tree)) then ()
-            else if is_word then (
-              let cmp (k1, p1) (k2, p2) = p1 - p2 in
-              pqueue :=
-                Rbtree.insert
-                  (prefix, Hashtbl.find !priorities prefix)
-                  !pqueue cmp;
-              search_all (Node (is_word, priority, tree)))
+            if is_word then
+              if is_empty (Node (is_word, priority, tree)) then
+                pqueue :=
+                  Rbtree.insert
+                    (prefix, Hashtbl.find !priorities prefix)
+                    !pqueue cmp
+              else (
+                pqueue :=
+                  Rbtree.insert
+                    (prefix, Hashtbl.find !priorities prefix)
+                    !pqueue cmp;
+                search_all (Node (is_word, priority, tree)))
             else search_all (Node (is_word, priority, tree))
         | h :: t ->
             let prefix = prefix ^ String.make 1 h in
@@ -200,12 +197,13 @@ let rec traverse_all (Node (is_word, priority, tree)) depth =
         let a = search_pairs t in
         if StringMap.cardinal (get_tree (StringMap.find key tree)) != 0 then
           if is_word then
-            "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ " -> "
+            "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ ") -> "
             ^ traverse_all (StringMap.find key tree) (depth + 1)
+            ^ a
           else
             "\n" ^ string_of_int depth ^ " : (" ^ key ^ " -> "
             ^ traverse_all (StringMap.find key tree) (depth + 1)
-            ^ ")"
+            ^ a ^ ")"
         else "\n" ^ string_of_int depth ^ " : (WORD: " ^ key ^ ")" ^ a
   in
   search_pairs pairs
