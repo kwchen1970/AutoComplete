@@ -1,5 +1,7 @@
 open Group_proj
+open Graphics
 open View
+open Group_proj.Button
 include Group_proj.Trie
 module Tr = Trie
 include Group_proj.Dict
@@ -77,6 +79,29 @@ let first_tup (x, _) = x
 let sec_tup (_, x) = x
 let i_width img = first_tup (Images.size img)
 let i_length img = sec_tup (Images.size img)
+let load_imag image x y = let col_arr = load_ppm_as_color_array image in let img = Graphics.make_image col_arr in Graphics.draw_image img x y
+
+
+let animate_jelly time= 
+  let x = 1400 in 
+  let y = 500 in 
+  let images = [
+    "data/jelly_1.ppm";
+    "data/jelly_2.ppm";
+    "data/jelly_3.ppm";
+    "data/jelly_4.ppm";
+  ] in
+  let start_t = Unix.gettimeofday () in
+  let rec loop_ani fr = 
+    let curr_time = Unix.gettimeofday () in
+    if (curr_time -. start_t) < time then 
+      let image_p = List.nth images (fr mod 4) in
+      load_imag image_p x y;
+      Unix.sleepf 0.2;
+      loop_ani (fr + 1) else 
+        ()
+      in
+      loop_ani 0
 
 (**This launches the GUI and the operations it can do.*)
 let () =
@@ -87,9 +112,8 @@ let () =
     start_text ();
     let color_array = load_ppm_as_color_array "data/actual_sugar_title.ppm" in
     let img = Graphics.make_image color_array in
-    Graphics.draw_image img 550 900;
-  if Sys.argv.(1) = "sentence" then print_to_screen_sentence_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" "" 0
-  else if Sys.argv.(1) = "autofill" then print_to_screen_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" 
+    Graphics.draw_image img 520 900;
+    print_to_screen_sentence_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" "" 0
   with
   | Graphics.Graphic_failure _ ->
       (* Catch the fatal I/O error and exit cleanly *)
