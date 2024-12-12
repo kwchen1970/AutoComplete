@@ -103,10 +103,6 @@ let animate_jelly time=
       in
       loop_ani 0
 
-
-
-
-
 (**This launches the GUI and the operations it can do.*)
 let () = 
   try

@@ -87,14 +87,3 @@ let complete_next_word prompt =
       let gen_text = extract_generated prompt result in
       Lwt.return (extract_first_word gen_text)
   | _ -> Lwt.return ""
-
-let () =
-  let prompt = Sys.argv.(1) in
-  let handle prompt =
-    let%lwt res = complete_sentence prompt in
-    let%lwt first = complete_next_word prompt in
-    Printf.printf "\nExtracted: \n%s" res;
-    Printf.printf "\nNext word: \n%s\n" first;
-    Lwt.return ()
-  in
-  Lwt_main.run (handle prompt)

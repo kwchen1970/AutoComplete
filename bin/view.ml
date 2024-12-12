@@ -8,6 +8,7 @@ include Lwt.Infix
 
 type t = Tr.t
 
+(*a empty tree*)
 let empt = Tr.empty
 
 type button = {
@@ -16,11 +17,14 @@ type button = {
   enabled : bool;
 }
 
+(*enables the button*)
 let enabled b = b.enabled
 
+(**[string_list_to_string lst] is the string of a list*)
 let string_list_to_string lst =
   String.concat "" lst (* Concatenates the list with no separator *)
 
+(**[insert_all world_list tree ]*)
 let rec insert_all word_list tree =
   match word_list with
   | [] -> tree
@@ -28,6 +32,7 @@ let rec insert_all word_list tree =
       let new_tree = Tr.insert (Tr.to_char_list h) tree in
       insert_all t new_tree
 
+(*full dictionary from data folder*)
 let word_dict = create_dict "data/COMMON.TXT" empty
 let word_tree = insert_all word_dict Tr.empty
 let full_tree = insert_all (create_dict "data/COMMON.TXT" empty) Tr.empty
@@ -80,13 +85,7 @@ let blend_color alpha bg fg =
 
   rgb (blend alpha r1 r2) (blend alpha g1 g2) (blend alpha b1 b2)
 
-(**[bubble st ed] draws the search bar bubble*)
-let rec bubble (st : int) (ed : int) () =
-  set_color (rgb 229 228 226);
-  fill_circle st 540 20;
-  fill_circle ed 540 20;
-  fill_rect st 520 (ed - st) 40
-
+(**[center_pad width height] creates the notepad in the center with size dimensions as inputted *)
 let center_pad width height =
   let x = (1920 - width) / 2 in
   let y = (1080 - height) / 2 in
@@ -164,6 +163,7 @@ let turn_char_to_string_lis trie =
   let char_lis = c :: [] in
   Tr.search char_lis trie
 
+(**[print_autofill_sentence sent x_int y_int color] is the *)
 let rec print_autofill_sentence sent x_int y_int color =
   complete_sentence sent >>= fun rest_sent ->
   if String.length rest_sent = 0 then Lwt.return ()
@@ -178,31 +178,29 @@ let rec print_autofill_sentence sent x_int y_int color =
         count y_int color
     else Lwt.return ()
 
+(**[is_printable c] checks if c is a printable character*)
 let is_printable c =
   let code = Char.code c in
   code >= 32 && code <= 126
 
-let remove_wd_characters str =
-  String.to_seq str |> Seq.filter is_printable |> String.of_seq
+(**[remove_wd_chars str] is removing the weird characters from str*)
+let remove_wd_chars str =
+  let sequence = String.to_seq str in
+  let filt_seq = Seq.filter is_printable sequence in
+  String.of_seq filt_seq
 
-(* let print_autofill_sentence_blocking sent x_int y_int color = Lwt_main.run
-   (print_autofill_sentence sent x_int y_int color) *)
-
+  (**[print_autofill_sentence_blocking sent x_int y_int color] is autofilling the sentence in the color color*)
 let print_autofill_sentence_blocking sent x_int y_int color =
   let s = Lwt_main.run (complete_sentence sent) in
-  let rest_sent = remove_wd_characters s in
+  let rest_sent = remove_wd_chars s in
   if String.length rest_sent > 0 then (
     set_color color;
     moveto x_int y_int;
     draw_string rest_sent);
   rest_sent
 
-(* let test_sentence_auto sent x_int y_int = print_autofill_sentence_blocking
-   sent x_int y_int blue *)
 (**[autofill word_accum suggestions] rest of the word to be filled by the
    suggestion*)
-
-(**suggestions can be empty but it breaks it when it is empty*)
 let autofill word_accum suggestions =
   if List.length suggestions = 0 then ""
   else
@@ -230,6 +228,7 @@ let rec print_autofill rest_of_word x_int y_int color =
         count y_int color
     else ()
 
+  (**[print_sent_autofill rest_of_sent x_int y_int color x_max x_min line_height] is *)
 let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min
     line_height =
   if String.length rest_of_sent = 0 then (x_int, y_int)
@@ -268,7 +267,7 @@ let basic_window () =
   moveto x y;
 
   draw_string title
-
+(**[draw_buttons] draws the buttons on the side of the GUI*)
 let draw_buttons () =
   moveto 338 720;
   set_color (rgb 70 183 224);
@@ -296,8 +295,10 @@ let start_text () =
   moveto x y;
   draw_string title
 
+(**[string_to_char_lis s] is the char list of a string*)
 let string_to_char_lis (s : string) : char list = List.of_seq (String.to_seq s)
 
+(**[hashtable_to_string table] is the string of a hash table*)
 let hashtable_to_string table =
   (* Convert the hashtable to a list of key-value pairs *)
   let included_keys = ref [] in
@@ -321,6 +322,7 @@ let hashtable_to_string table =
        (fun (key, value) -> Printf.sprintf "%d:%s" key value)
        sorted_pairs)
 
+(**[hashtable_to_string2 table] is the string of a hashtable*)
 let hashtable_to_string2 table =
   (* Convert the hashtable to a list of key-value pairs *)
   let included_keys = ref [] in
@@ -342,12 +344,13 @@ let hashtable_to_string2 table =
     List.map (fun (key, value) -> Printf.sprintf "%s" value) sorted_pairs
   in
   String.concat "" value_strings
-
+(**[save_text_to_file filename text] is saving the text to a file named filename*)
 let save_text_to_file filename text =
   let oc = open_out filename in
   output_string oc text;
   close_out oc;
 
+(**the text displayed when you click button one. *)
   let title = "Text saved to: " ^ filename in
   set_text_size 100;
   set_color red;
@@ -357,7 +360,6 @@ let save_text_to_file filename text =
   print_endline ("Text saved to " ^ filename)
 
 (**functions to read a ppm file to display a image*)
-
 (**[skip_comments ic] doesn't read comments in a ppm file in the returned string*)
 let skip_comments ic =
   let rec aux () =
@@ -415,17 +417,22 @@ let load_ppm filename =
     read_pixel 0;
 
     close_in ic
-
+(**overflow_rectangle is a rectangle that covers up the overflow of the autocomplete*)
 let overflow_rectangle () =
   set_color white;
   fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50 - 60) 500 750
 
+
 let sent_comp = ref ""
 let x_int_from_tab = ref 0
 let y_int_from_tab = ref 0
+(**[first_tup (x,_)] is the first argument of a tuple*)
 let first_tup (x, _) = x
+
+(**[sec_tup (_,x)] is the second argument of a tuple*)
 let sec_tup (_, x) = x
 
+(**[insert_string_to_hash s x hash] is inserting key s and value x into hashtable hash*)
 let insert_string_to_hash s x hash =
   let _ = x + 1 in
   let len = String.length s in
@@ -433,6 +440,7 @@ let insert_string_to_hash s x hash =
     Hashtbl.replace hash (x + i) (String.make 1 s.[i])
   done
 
+(**[read_file filename] reads the file filename*)
 let read_file filename =
   let channel = open_in filename in
   try
@@ -444,6 +452,7 @@ let read_file filename =
     close_in_noerr channel;
     raise e
 
+(**[load_file text] is loading the text back to the output.txt*)
 let load_file text =
   set_color black;
   let x = ref 580 in
@@ -485,8 +494,10 @@ let load_file text =
   aux 0 0 (Hashtbl.create 5) (Hashtbl.create 5);
   (!x, !y)
 
+(**after_tab_pos is a reference for the tab position*)
 let after_tab_pos = ref 0
 
+(**[rgb24_to_color_array img] writes out the img rgb to a color array*)
 let rgb24_to_color_array (img : Rgb24.t) : Graphics.color array array =
   let w, h = (img.Rgb24.width, img.Rgb24.height) in
   let color_matrix = Array.make_matrix h w Graphics.black in
@@ -498,6 +509,7 @@ let rgb24_to_color_array (img : Rgb24.t) : Graphics.color array array =
   done;
   color_matrix
 
+  (*load_options is the image loading options*)
 let load_options =
   [
     Images.Load_Progress
@@ -512,16 +524,19 @@ let load_ppm_as_color_array filename : Graphics.color array array =
   | Rgb24 img -> rgb24_to_color_array img
   | _ -> failwith "Error: Unexpected image format or corrupted file."
 
-let first_tup (x, _) = x
-let sec_tup (_, x) = x
+(**[i_width img] gets the width of the image*)
 let i_width img = first_tup (Images.size img)
+
+(**[i_length img] gets the length of the image*)
 let i_length img = sec_tup (Images.size img)
 
+(**[load_imag image x y] laods the image from a ppm array*)
 let load_imag image x y =
   let col_arr = load_ppm_as_color_array image in
   let img = Graphics.make_image col_arr in
   Graphics.draw_image img x y
 
+(**[animate_jelly time] is animating the jelly for time seconds*)
 let animate_jelly time =
   let x = 1400 in
   let y = 500 in
@@ -545,9 +560,13 @@ let animate_jelly time =
   in
   loop_ani 0
 
+(*some references for tab position*)
 let tab_reference = ref 0
 let tab_pos = ref 0
 
+(**[print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+    accum_sentence word_index sent last_sent_suggest tab_before tree] is the function responsiuble for updating the GUI and 
+    running all the button, autofill, typing funcitonality.*)
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest tab_before tree =
   print_endline ("accum_sentence is " ^ hashtable_to_string accum_sentence);
@@ -621,7 +640,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         if List.length old_suggestions > 0 then (
           let rest_of_word = autofill accum old_suggestions in
           print_autofill rest_of_word x_int y_int black;
-          let count = x_int + (7 * String.length rest_of_word) in
+          let count = x_int + (7 * String.length rest_of_word)+ 5 in
           print_to_screen_sentence "" count y_int (count + 4) x_off_word
             accum_sent accum_sentence word_index sent last_sent_suggest 1 tree)
         else ()
@@ -746,10 +765,14 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
       else no_suggest (x_int - 50) y_int (* HERE*)
     else begin
-      print_endline ("TAB REFERENCE IS " ^ string_of_int !tab_reference);
       if !tab_reference = 1 then begin
-        print_suggestions1 suggestions x_int y_int
-          (x_off_word + (6 * String.length !sent_comp))
+        let new_x_off = x_off_word + (6 * String.length !sent_comp) in
+        let corr_x_off =
+          if new_x_off > max_x_bound then
+            min_x_bound + (3 * (new_x_off - max_x_bound))
+          else new_x_off
+        in
+        print_suggestions1 suggestions x_int y_int corr_x_off
       end
       else if !tab_reference = 0 then begin
         print_endline ("tab_before is " ^ string_of_int tab_before);
@@ -796,10 +819,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         accum_sent accum_sentence (word_index + 1) new_sent !sent_comp 0 tree
   end
 
-(* Call the function recursively with the new accumulator *)
-(* print_to_screen_sentence new_accum count y_offset (count + 4) x_off_word
-   accum_sent accum_sentence (word_index + 1) new_sent !sent_comp 0 tree *)
-
+(**[print_to_screen_sentence_1  accum x_int y_int counter x_off_word accum_sent
+    accum_sentence word_index sent last_sent_suggest tab_before] is the same function as 
+    print_to_screen_sentence except it uses the full_tree in place of tree parameter*)
 let print_to_screen_sentence_1 accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest tab_before =
   print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
