@@ -207,13 +207,8 @@ let autofill word_accum suggestions =
   if List.length suggestions = 0 then ""
   else
     let suggestion = List.nth suggestions 0 in
-    if
-      String.length word_accum
-      <= String.length suggestion - String.length word_accum
-    then
-      String.sub suggestion (String.length word_accum)
-        (String.length suggestion - String.length word_accum)
-    else ""
+    String.sub suggestion (String.length word_accum)
+      (String.length suggestion - String.length word_accum)
 
 (** [print_autofill rest_of_word x_int y_int color] prints the autofilled word
     from suggestions*)
@@ -232,6 +227,7 @@ let rec print_autofill rest_of_word x_int y_int color =
 
 let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min
     line_height =
+  print_endline ("rest_of_sent is " ^ rest_of_sent);
   if String.length rest_of_sent = 0 then (x_int, y_int)
   else
     let count = x_int + 6 in
@@ -240,15 +236,11 @@ let rec print_sent_autofill rest_of_sent x_int y_int color x_max x_min
     in
     set_color color;
     moveto count2 y_int;
-    if String.length rest_of_sent > 1 then (
+    if String.length rest_of_sent > 0 then (
       draw_string (String.make 1 rest_of_sent.[0]);
       print_sent_autofill
         (String.sub rest_of_sent 1 (String.length rest_of_sent - 1))
         count2 y_int color x_max x_min line_height)
-    else if String.length rest_of_sent = 1 then begin
-      draw_string (String.make 1 rest_of_sent.[0]);
-      (count, y_int)
-    end
     else (count, y_int)
 
 (**[basic_window ()] creates a blank GUI*)
@@ -418,7 +410,7 @@ let load_ppm filename =
 
 let overflow_rectangle () =
   set_color white;
-  fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50 - 60) 300 750
+  fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50) 200 750
 
 let sent_comp = ref ""
 let x_int_from_tab = ref 0
@@ -446,44 +438,37 @@ let read_file filename =
 
 let load_file text =
   set_color black;
-  let x = ref 580 in
-  let y = ref 855 in
-  let rec aux i word_i accum accum_sent =
-    if i >= String.length text - 1 then ()
+  let rec aux x y i word_i accum accum_sent =
+    if i = String.length text - 1 then (x, y)
     else begin
       let c = String.get text i in
-      if !x >= 1360 then begin
+      if x >= 1360 then begin
         Hashtbl.add accum_sent i c;
-        moveto 560 (!y + 5);
+        moveto 560 (y + 5);
         draw_char c;
         if c = ' ' then begin
-          Hashtbl.clear accum;
-          x := 560;
-          y := !y + 5;
-          aux (i + 1) 0 accum accum_sent
+          let () = Hashtbl.clear accum in
+          aux 560 (y + 5) (i + 1) 0 accum accum_sent
         end
-        else Hashtbl.add accum word_i c;
-        x := 560;
-        y := !y + 5;
-        aux (i + 1) (word_i + 1) accum accum_sent
+        else
+          let () = Hashtbl.add accum word_i c in
+          aux 560 (y + 5) (i + 1) (word_i + 1) accum accum_sent
       end
       else begin
         Hashtbl.add accum_sent i c;
-        moveto (!x + 5) !y;
+        moveto (x + 5) y;
         draw_char c;
         if c = ' ' then begin
           Hashtbl.clear accum;
-          x := !x + 6;
-          aux (i + 1) 0 accum accum_sent
+          aux (x + 6) y (i + 1) 0 accum accum_sent
         end
-        else Hashtbl.add accum word_i c;
-        x := !x + 6;
-        aux (i + 1) (word_i + 1) accum accum_sent
+        else
+          let () = Hashtbl.add accum word_i c in
+          aux (x + 6) y (i + 1) (word_i + 1) accum accum_sent
       end
     end
   in
-  aux 0 0 (Hashtbl.create 5) (Hashtbl.create 5);
-  (!x, !y)
+  aux 580 855 0 0 (Hashtbl.create 5) (Hashtbl.create 5)
 
 let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent tree =
@@ -641,8 +626,6 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
       print_to_screen new_accum count y_offset (count + 4) x_off_word accum_sent
         accum_sentence (word_index + 1) new_sent tree
   end
-
-let after_tab_pos = ref 0
 
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest tab_before tree =
