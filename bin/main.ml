@@ -104,7 +104,8 @@ let animate_jelly time=
       loop_ani 0
 
 (**This launches the GUI and the operations it can do.*)
-let () = 
+let () =
+  Random.self_init ();
   try
     basic_window ();
     draw_buttons ();
