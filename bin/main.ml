@@ -80,6 +80,7 @@ let i_length img = sec_tup (Images.size img)
 
 (**This launches the GUI and the operations it can do.*)
 let () =
+  Random.self_init ();
   try
     basic_window ();
     draw_buttons ();
