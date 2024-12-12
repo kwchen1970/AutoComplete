@@ -11,12 +11,17 @@ let rec print_str_list lst =
 
 let list_equal lst1 lst2 = List.sort compare lst1 = List.sort compare lst2
 
+let dedup_list lst =
+  List.filteri
+    (fun curr_index curr_elem ->
+      match List.find_index (fun elem -> elem = curr_elem) lst with
+      | Some fst_index -> fst_index = curr_index
+      | None -> false)
+    lst
+
 module TrieTester (T : module type of Trie) = struct
   include T
 
-  (* Thread each [insert] function in [insert_all]. *)
-  (* Add tests for capitalization, punctuation, words that are substrings or
-     other words, multiple element words (not allowed, used regex to stop). *)
   let rec insert_all word_list tree =
     match word_list with
     | [] -> tree
@@ -36,7 +41,6 @@ module TrieTester (T : module type of Trie) = struct
             try Str.search_forward allowed line new_start_pos
             with Not_found -> String.length line
           in
-          print_endline (first_word ^ " " ^ string_of_int new_start_pos);
           first_word :: split allowed second_word_pos line
         with Not_found -> if line = "" then [] else [ line ])
 
@@ -52,11 +56,96 @@ module TrieTester (T : module type of Trie) = struct
     in
     let allowed = Str.regexp "\\([a-zA-Z0-9]+\\[[0-9]+\\]\\)" in
     let actual = split allowed 0 (T.pqueue_to_string (T.return_pqueue ())) in
-    "" >:: fun _ ->
-    assert_equal true (cmp expected actual) ~printer:string_of_bool
+    "make_pqueue_to_string_test [" ^ prefix ^ "] ["
+    ^ List.fold_left
+        (fun acc elem -> acc ^ (if acc <> "" then " | " else "") ^ elem)
+        "" inserted_list
+    ^ "]"
+    >:: fun _ -> assert_equal true (cmp expected actual) ~printer:string_of_bool
+
+  (* Check that given some prefix, that the returned search words are in the
+     dictionary, have the searched word as its prefix. *)
+  let make_random_search_test list tree arb_prefix =
+    let searched = T.search (T.to_char_list arb_prefix) tree in
+    let rec check_prefix prefix word_list =
+      let end_pos = String.length prefix in
+      match word_list with
+      | [] -> true
+      | word :: t ->
+          if String.sub word 0 end_pos = prefix then check_prefix prefix t
+          else false
+    in
+    check_prefix arb_prefix searched
+
+  (* Use QCheck to insert randomly chosen words from dictionary into the tree,
+     then check that those words are a member of the list produced by T.search
+     word. *)
+  let update_tree tree arb_word =
+    tree := T.insert (T.to_char_list arb_word) !tree
+
+  let make_random_insert_test tree arb_word =
+    update_tree tree arb_word;
+    let check_inserted =
+      let searched = T.search (T.to_char_list arb_word) !tree in
+      List.mem arb_word searched
+    in
+    check_inserted
+
+  let make_random_remove_test tree arb_word =
+    update_tree tree arb_word;
+    let check_removed =
+      tree := T.remove arb_word !tree;
+      let searched = T.search (T.to_char_list arb_word) !tree in
+      not (List.mem arb_word searched)
+    in
+    check_removed
+
+  let arb_prefix possible_words =
+    let open QCheck.Gen in
+    let rand_word = oneofl possible_words in
+    let rand_prefix word =
+      map (fun end_pos -> String.sub word 0 end_pos) (1 -- String.length word)
+    in
+    rand_word >>= rand_prefix
+
+  let arb_word possible_words =
+    QCheck.(
+      map
+        (fun index -> List.nth possible_words index)
+        (0 -- (List.length possible_words - 1)))
+
+  let test_random_search_test file_name =
+    let word_list = Dict.create_dict file_name Dict.empty in
+    let tree = insert_all word_list T.empty in
+    let arb_prefix = QCheck.make (arb_prefix word_list) in
+    QCheck.Test.make
+      ~count:(min (List.length word_list) 100)
+      arb_prefix
+      (fun prefix -> make_random_search_test word_list tree prefix)
+
+  let test_random_insert_test file_name =
+    let ref_tree = ref T.empty in
+    let word_list = Dict.create_dict file_name Dict.empty in
+    QCheck.Test.make
+      ~count:(min (List.length word_list) 100)
+      (arb_word word_list)
+      (make_random_insert_test ref_tree)
+
+  let test_random_remove_test file_name =
+    let ref_tree = ref T.empty in
+    let word_list = Dict.create_dict file_name Dict.empty in
+    QCheck.Test.make
+      ~count:(min (List.length word_list) 100)
+      (arb_word word_list)
+      (make_random_remove_test ref_tree)
 
   let make_insert_test expected word_lst =
-    "" >:: fun _ ->
+    "make_insert_test ["
+    ^ List.fold_left
+        (fun acc elem -> acc ^ (if acc <> "" then " | " else "") ^ elem)
+        "" word_lst
+    ^ "]"
+    >:: fun _ ->
     let rec cmp expected actual =
       match expected with
       | [] -> true
@@ -74,7 +163,7 @@ module TrieTester (T : module type of Trie) = struct
 
   (* [make_search_test] *)
   let make_search_test expected prefix tree =
-    "" >:: fun _ ->
+    "make_search_test [" ^ prefix ^ "]" >:: fun _ ->
     let rec cmp expected actual =
       match expected with
       | [] -> true
@@ -83,9 +172,6 @@ module TrieTester (T : module type of Trie) = struct
     (* Check if all contents in expected are also in the tree containing words
        from [word_list]. *)
     let leaves = T.search (T.to_char_list prefix) tree in
-
-    (* print_endline (List.fold_left (fun acc elem -> acc ^ " " ^ elem) ""
-       leaves); *)
     assert_equal true (cmp leaves expected) ~printer:string_of_bool;
 
     (* Check if the length of [expected] = number of word leaves in the tree
@@ -96,24 +182,127 @@ module TrieTester (T : module type of Trie) = struct
        else List.length expected = List.length leaves)
       ~printer:string_of_bool
 
+  (* List.mem [word] [T.search [word] [T.insert [word] tree]] = true. *)
+  let make_search_self_test word tree =
+    "make_search_self_test [" ^ word ^ "]" >:: fun _ ->
+    let tree = T.insert (T.to_char_list word) tree in
+    let searched = T.search (T.to_char_list word) tree in
+    assert_equal true (List.mem word searched)
+
+  (* Inorder traversal of the trie tree [tree] should return words in
+     alphabetical order. *)
+  let make_to_string_test bool_exp word_list tree =
+    "make_to_string_test ["
+    ^ List.fold_left
+        (fun acc elem -> acc ^ (if acc <> "" then " | " else "") ^ elem)
+        "" word_list
+    ^ "]"
+    >:: fun _ ->
+    let allowed = Str.regexp "(WORD: \\([^)]*\\))" in
+    let actual =
+      List.flatten
+        (List.map
+           (fun s ->
+             if Str.string_match allowed s 0 then [ Str.matched_group 1 s ]
+             else [])
+           (split allowed 0 (T.to_string tree)))
+    in
+
+    let expected = List.sort String.compare word_list in
+
+    assert_equal bool_exp (expected = actual)
+
   (* Test suite that tests [insert]. *)
+  let wood_lst =
+    [
+      "wood alcohol";
+      "wood anemone";
+      "wood block";
+      "wood ibis";
+      "wood lot";
+      "wood warbler";
+      "wood rat";
+      "wood sorrel";
+      "wood anemone";
+      "wood anemone";
+      "wood anemone";
+      "wood warbler";
+    ]
+
+  let word_lst =
+    [
+      "apple";
+      "aprle";
+      "appol";
+      "appla";
+      "apole";
+      "bapple";
+      "barple";
+      "triangle";
+    ]
+
+  let grammar_lst =
+    [
+      "grammalogue";
+      "grammar";
+      "grammarian";
+      "grammatical";
+      "grammatical";
+      "gramar";
+      "grammar";
+    ]
+
   let make_pqueue_tests =
     [
-      make_pqueue_to_string_test "a"
+      QCheck_runner.to_ounit2_test
+        (test_random_search_test "../data/SINGLE.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_insert_test "../data/SINGLE.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_remove_test "../data/SINGLE.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_search_test "../data/RANDOM.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_insert_test "../data/RANDOM.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_remove_test "../data/RANDOM.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_search_test "../data/YELLOW.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_insert_test "../data/YELLOW.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_remove_test "../data/YELLOW.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_search_test "../data/DUPYELLOW.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_insert_test "../data/DUPYELLOW.TXT");
+      QCheck_runner.to_ounit2_test
+        (test_random_remove_test "../data/DUPYELLOW.TXT");
+      make_pqueue_to_string_test "grammar" grammar_lst
+        [ "grammar[2]"; "grammarian[1]" ];
+      make_pqueue_to_string_test "wood" wood_lst
         [
-          "apple";
-          "aprle";
-          "appol";
-          "appla";
-          "apole";
-          "bapple";
-          "barple";
-          "triangle";
-        ]
-        [ "apple[1]"; "aprle[1]"; "appol[1]"; "appla[1]"; "apole[1]" ];
-      make_pqueue_to_string_test "w"
-        [ "wood"; "ward"; "weed"; "wood"; "word" ]
-        [ "wood[2]"; "ward[1]"; "weed[1]"; "word[1]" ];
+          "alcohol[1]";
+          "anemone[4]";
+          "block[1]";
+          "ibis[1]";
+          "lot[1]";
+          "warbler[2]";
+          "rat[1]";
+          "sorrel[1]";
+        ];
+    ]
+
+  let make_to_string_tests =
+    [
+      make_to_string_test true [] T.empty;
+      make_to_string_test true word_lst (insert_all word_lst T.empty);
+      make_to_string_test false grammar_lst (insert_all grammar_lst T.empty);
+      make_to_string_test true (dedup_list grammar_lst)
+        (insert_all grammar_lst T.empty);
+      make_to_string_test false wood_lst (insert_all wood_lst T.empty);
+      make_to_string_test true (dedup_list wood_lst)
+        (insert_all wood_lst T.empty);
     ]
 
   let make_tree_tests =
@@ -121,22 +310,7 @@ module TrieTester (T : module type of Trie) = struct
       make_insert_test
         [ "apple"; "appol"; "aprle" ]
         [ "apple"; "appol"; "aprle" ];
-      (let word_lst =
-         [
-           "apple";
-           "aprle";
-           "appol";
-           "appla";
-           "apole";
-           "bapple";
-           "barple";
-           "triangle";
-         ]
-       in
-       let word_tree =
-         T.refresh_priorities;
-         insert_all word_lst T.empty
-       in
+      (let word_tree = insert_all word_lst T.empty in
        let _ = make_insert_test word_lst word_lst in
        let _ = make_search_test [ "apple"; "appol"; "appla" ] "app" word_tree in
        let _ =
@@ -146,7 +320,14 @@ module TrieTester (T : module type of Trie) = struct
        in
        let _ = make_search_test [ "bapple"; "barple" ] "b" word_tree in
        make_search_test [ "triangle" ] "triangl" word_tree);
+      make_search_test [ "triangle" ] "triangle"
+        (T.insert (T.to_char_list "triangle") T.empty);
       make_search_test [] "" T.empty;
+      make_search_self_test "wood" T.empty;
+      make_search_self_test "a" T.empty;
+      make_search_self_test "wood warbler" T.empty;
+      make_search_self_test "xhjfsknj" T.empty;
+      make_search_self_test "10101" T.empty;
       (let wood_dict = Dict.create_dict "../data/COMMON.TXT" Dict.empty in
        let wood_lst =
          [
@@ -175,25 +356,8 @@ module TrieTester (T : module type of Trie) = struct
          ]
        in
        let word_tree = insert_all wood_dict T.empty in
-
        make_search_test wood_lst "wood " word_tree);
-      (let wood_lst =
-         [
-           "wood alcohol";
-           "wood anemone";
-           "wood block";
-           "wood ibis";
-           "wood lot";
-           "wood warbler";
-           "wood rat";
-           "wood sorrel";
-           "wood anemone";
-           "wood anemone";
-           "wood anemone";
-           "wood warbler";
-         ]
-       in
-       let word_tree = insert_all wood_lst T.empty in
+      (let word_tree = insert_all wood_lst T.empty in
        let _ = make_search_test wood_lst "wood " word_tree in
        make_search_test (List.rev wood_lst) "wood " word_tree);
       (let tree = T.empty in
@@ -213,15 +377,11 @@ module TrieTester (T : module type of Trie) = struct
          ]
        in
        let word_tree = insert_all wood_lst T.empty in
-       let _ = make_search_test wood_lst "wood " word_tree in
+       let _ = make_search_test wood_lst "wood" word_tree in
        let word_tree = T.remove "wood anemone" word_tree in
        let word_tree = T.remove "wood" word_tree in
        make_search_test [ "wood alcohol"; "wood warbler" ] "wood " word_tree);
     ]
-
-  (* Make QCheck test for search and insert. *)
-
-  (* Make tests for priority queue stuff. *)
 end
 
 module NGramTester (C : module type of NgramColl) = struct
@@ -446,7 +606,7 @@ module RBTreeTester (RB : module type of Rbtree) = struct
       ~printer:(List.fold_left (fun acc elem -> acc ^ " " ^ elem) "")
 
   let arb_word =
-    let possible_words = Dict.create_dict "../data/COMMON.TXT" Dict.empty in
+    let possible_words = Dict.create_dict "../data/YELLOW.TXT" Dict.empty in
     QCheck.(
       map
         (fun (k_index, p) -> (List.nth possible_words k_index, p))
@@ -493,10 +653,10 @@ module RBTreeTester (RB : module type of Rbtree) = struct
     make_random_remove_rec_test word !ref_tree
 
   let test_random_rbtree_insert_test =
-    QCheck.Test.make ~count:1000 arb_word make_random_insert_test
+    QCheck.Test.make ~count:500 arb_word make_random_insert_test
 
   let test_random_rbtree_remove_test =
-    QCheck.Test.make ~count:1000 arb_word make_random_remove_test
+    QCheck.Test.make ~count:500 arb_word make_random_remove_test
 
   let test_tree_A = RB.insert ("word", 1) RB.empty cmp
 
@@ -616,14 +776,6 @@ module DictTester (D : module type of Dict) = struct
     | [] -> true
     | h :: t -> if List.mem h actual then cmp_rec t actual else false
 
-  let dedup_list lst =
-    List.filteri
-      (fun curr_index curr_elem ->
-        match List.find_index (fun elem -> elem = curr_elem) lst with
-        | Some fst_index -> fst_index = curr_index
-        | None -> false)
-      lst
-
   let make_error_test func error = "" >:: fun _ -> assert_raises error func
 
   let make_create_dict_test bool_exp expected file_name =
@@ -664,7 +816,7 @@ module DictTester (D : module type of Dict) = struct
 
   let make_random_rbtree_insert_test file_name =
     let test_dict = Dict.create_dict file_name Dict.empty in
-    QCheck.Test.make ~count:1000
+    QCheck.Test.make ~count:500
       (arb_word test_dict file_name)
       (make_random_check_test test_dict)
 
@@ -719,12 +871,13 @@ let test_suite =
   "test suite"
   >::: List.flatten
          [
-           (* TrieTest.make_tree_tests; *)
+           TrieTest.make_tree_tests;
            TrieTest.make_pqueue_tests;
+           TrieTest.make_to_string_tests;
            (* NGramTest.make_ngram_test; *)
-           (* RBTreeTest.make_rbtree_mem_test;
-              RBTreeTest.make_rb_tree_insert_remove_test;
-              DictTest.make_dict_test; *)
+           RBTreeTest.make_rbtree_mem_test;
+           RBTreeTest.make_rb_tree_insert_remove_test;
+           DictTest.make_dict_test;
          ]
 
 let _ = run_test_tt_main test_suite

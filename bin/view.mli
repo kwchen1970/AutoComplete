@@ -77,22 +77,11 @@ val print_to_screen_sentence :
   int ->
   string ->
   string ->
-  unit
-
-val print_to_screen_both :
-  string ->
   int ->
-  int ->
-  int ->
-  int ->
-  (int, string) Hashtbl.t ->
-  (int, string) Hashtbl.t ->
-  int ->
-  string ->
   t ->
   unit
 
-val print_to_screen_both_1 :
+val print_to_screen_sentence_1 :
   string ->
   int ->
   int ->
@@ -102,6 +91,8 @@ val print_to_screen_both_1 :
   (int, string) Hashtbl.t ->
   int ->
   string ->
+  string ->
+  int ->
   unit
 
 (*prints the typing and suggestions to screen*)
