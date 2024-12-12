@@ -9,6 +9,9 @@ type 'a t =
 let empty = Leaf
 let is_empty tree = tree = Leaf
 
+(** [balance] is a function that takes a parent node with two children and
+    rotates the tree in one of four ways to preserve the local invariant: no two
+    endpoints (a parent and a child node) can both be [Red]. *)
 let balance = function
   | Black, z, Node (Red, y, Node (Red, x, a, b), c), d
   | Black, z, Node (Red, x, a, Node (Red, y, b, c)), d
