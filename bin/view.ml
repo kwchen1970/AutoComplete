@@ -665,7 +665,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
                  max_x_bound 580 line_height);
           tab_reference := 1;
           tab_pos := !x_int_from_tab;
-          let old_suggest = last_sent_suggest in
+          let old_suggest = last_sent_suggest ^ " " in
           insert_string_to_hash old_suggest word_index accum_sent;
           after_tab_pos := !x_int_from_tab;
           let new_sent = sent ^ " " ^ old_suggest in
