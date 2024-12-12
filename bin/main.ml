@@ -1,5 +1,6 @@
 open Group_proj
 open View
+open Group_proj.Button
 include Group_proj.Trie
 module Tr = Trie
 include Group_proj.Dict
@@ -87,10 +88,8 @@ let () =
     let color_array = load_ppm_as_color_array "data/actual_sugar_title.ppm" in
     let img = Graphics.make_image color_array in
     Graphics.draw_image img 550 900;
-    if Sys.argv.(1) = "autofill" then 
-    print_to_screen_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" 
-  else if Sys.argv.(1) = "sentence" then print_to_screen_sentence "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" ""
-  else if Sys.argv.(1) = "both" then  print_to_screen_both_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 ""
+  if Sys.argv.(1) = "sentence" then print_to_screen_sentence_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" "" 0
+  else if Sys.argv.(1) = "autofill" then print_to_screen_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" 
   with
   | Graphics.Graphic_failure _ ->
       (* Catch the fatal I/O error and exit cleanly *)
