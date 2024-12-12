@@ -26,3 +26,10 @@ Used ChatGPT4 to help write the filtering out of weird characters functions.
 Used prompts like:
 "How to identify if a character is not a weird character? Like not ASC11 character?"
 "Can I use sequences to filter through a string to remove characters? How do sequences work in general?"
+
+(11/28/24)
+Used ChatGPT4 for inspiration in debugging [insert], [search], and [remove] functions when the functions were not
+updating the entire Trie tree.
+Used the OP for inspiration in implementing the [balance] function of the red-black tree.
+Dictionary text files, [COMMON.TXT] and [SINGLE.TXT], were taken from Moby Word Lists (https://www.gutenberg.org/ebooks/3201). 
+Used ChatGPT4 to generate 100 random strings in [RANDOM.TXT].
