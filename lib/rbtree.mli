@@ -53,7 +53,7 @@ val remove : 'a -> 'a t -> ('a -> 'a -> int) -> 'a t
     returning the unchanged [tree] if [x] is not in [tree].
 
     Requires: that the BST, local, and global invariants be preserved in the
-    possibly updated red-black tree. *)
+    possibly updated red-black tree.*)
 
 val preorder_traversal : 'a t -> 'a list
 (** [preorder_traversal tree] is a function that returns a list of all values in
