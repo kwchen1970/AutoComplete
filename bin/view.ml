@@ -418,7 +418,7 @@ let load_ppm filename =
 
 let overflow_rectangle () =
   set_color white;
-  fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50 - 60) 300 750
+  fill_rect (((1920 - 800) / 2) + 800) (((1080 - 800) / 2) + 50 - 60) 500 750
 
 let sent_comp = ref ""
 let x_int_from_tab = ref 0
@@ -636,6 +636,64 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
 
 let after_tab_pos = ref 0
 
+let rgb24_to_color_array (img : Rgb24.t) : Graphics.color array array =
+  let w, h = (img.Rgb24.width, img.Rgb24.height) in
+  let color_matrix = Array.make_matrix h w Graphics.black in
+  for y = 0 to h - 1 do
+    for x = 0 to w - 1 do
+      let { Color.r; g; b } = Rgb24.get img x y in
+      color_matrix.(y).(x) <- Graphics.rgb r g b
+    done
+  done;
+  color_matrix
+
+let load_options =
+  [
+    Images.Load_Progress
+      (fun progress ->
+        Printf.printf "Loading progress: %.2f%%\n" (progress *. 100.0));
+    Images.Load_Resolution (300.0, 300.0);
+  ]
+
+(* Load a PPM file and convert it to a color array *)
+let load_ppm_as_color_array filename : Graphics.color array array =
+  match Ppm.load filename load_options with
+  | Rgb24 img -> rgb24_to_color_array img
+  | _ -> failwith "Error: Unexpected image format or corrupted file."
+
+let first_tup (x, _) = x
+let sec_tup (_, x) = x
+let i_width img = first_tup (Images.size img)
+let i_length img = sec_tup (Images.size img)
+
+let load_imag image x y =
+  let col_arr = load_ppm_as_color_array image in
+  let img = Graphics.make_image col_arr in
+  Graphics.draw_image img x y
+
+let animate_jelly time =
+  let x = 1400 in
+  let y = 500 in
+  let images =
+    [
+      "data/jelly_1.ppm";
+      "data/jelly_2.ppm";
+      "data/jelly_3.ppm";
+      "data/jelly_4.ppm";
+    ]
+  in
+  let start_t = Unix.gettimeofday () in
+  let rec loop_ani fr =
+    let curr_time = Unix.gettimeofday () in
+    if curr_time -. start_t < time then (
+      let image_p = List.nth images (fr mod 4) in
+      load_imag image_p x y;
+      Unix.sleepf 0.2;
+      loop_ani (fr + 1))
+    else ()
+  in
+  loop_ani 0
+
 let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest tab_before tree =
   print_endline ("sentence is " ^ sent);
@@ -662,8 +720,12 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         accum_sentence word_index sent last_sent_suggest 0 tree)
     else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
     then print_endline "clicked retrieve"
-    else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
-      print_endline "clicked button 3"
+    else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then begin
+      print_endline "clicked button 3";
+      animate_jelly 2.;
+      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+        accum_sentence word_index sent last_sent_suggest 0 tree
+    end
     else
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         accum_sentence word_index sent last_sent_suggest 0 tree

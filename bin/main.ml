@@ -1,4 +1,5 @@
 open Group_proj
+open Graphics
 open View
 open Group_proj.Button
 include Group_proj.Trie
@@ -81,7 +82,7 @@ let i_length img = sec_tup (Images.size img)
 let load_imag image x y = let col_arr = load_ppm_as_color_array image in let img = Graphics.make_image col_arr in Graphics.draw_image img x y
 
 
-let animate_jelly status= 
+let animate_jelly time= 
   let x = 1400 in 
   let y = 500 in 
   let images = [
@@ -90,19 +91,24 @@ let animate_jelly status=
     "data/jelly_3.ppm";
     "data/jelly_4.ppm";
   ] in
+  let start_t = Unix.gettimeofday () in
   let rec loop_ani fr = 
-    if status = 1 then (
+    let curr_time = Unix.gettimeofday () in
+    if (curr_time -. start_t) < time then 
       let image_p = List.nth images (fr mod 4) in
       load_imag image_p x y;
       Unix.sleepf 0.2;
-      loop_ani (fr + 1)
-    ) else () in loop_ani 0
+      loop_ani (fr + 1) else 
+        ()
+      in
+      loop_ani 0
+
 
 
 
 
 (**This launches the GUI and the operations it can do.*)
-let () =
+let () = 
   try
     basic_window ();
     draw_buttons ();
@@ -110,7 +116,6 @@ let () =
     let color_array = load_ppm_as_color_array "data/actual_sugar_title.ppm" in
     let img = Graphics.make_image color_array in
     Graphics.draw_image img 550 900;
-    animate_jelly 0;
   if Sys.argv.(1) = "sentence" then print_to_screen_sentence_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" "" 0
   else if Sys.argv.(1) = "autofill" then print_to_screen_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" 
   with
