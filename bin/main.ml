@@ -1,4 +1,5 @@
 open Group_proj
+open Graphics
 open View
 open Group_proj.Button
 include Group_proj.Trie
@@ -78,9 +79,36 @@ let first_tup (x, _) = x
 let sec_tup (_, x) = x
 let i_width img = first_tup (Images.size img)
 let i_length img = sec_tup (Images.size img)
+let load_imag image x y = let col_arr = load_ppm_as_color_array image in let img = Graphics.make_image col_arr in Graphics.draw_image img x y
+
+
+let animate_jelly time= 
+  let x = 1400 in 
+  let y = 500 in 
+  let images = [
+    "data/jelly_1.ppm";
+    "data/jelly_2.ppm";
+    "data/jelly_3.ppm";
+    "data/jelly_4.ppm";
+  ] in
+  let start_t = Unix.gettimeofday () in
+  let rec loop_ani fr = 
+    let curr_time = Unix.gettimeofday () in
+    if (curr_time -. start_t) < time then 
+      let image_p = List.nth images (fr mod 4) in
+      load_imag image_p x y;
+      Unix.sleepf 0.2;
+      loop_ani (fr + 1) else 
+        ()
+      in
+      loop_ani 0
+
+
+
+
 
 (**This launches the GUI and the operations it can do.*)
-let () =
+let () = 
   try
     basic_window ();
     draw_buttons ();
