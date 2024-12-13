@@ -7,11 +7,13 @@ module D = Group_proj.Dict
 open Group_proj.Inference
 include Lwt.Infix
 
+(*type for the tree*)
 type t = Tr.t
 
 (*a empty tree*)
 let empt = Tr.empty
 
+(*type for the button*)
 type button = {
   name : string;
   action : string -> string;
@@ -23,7 +25,7 @@ let enabled b = b.enabled
 
 (**[string_list_to_string lst] is the string of a list*)
 let string_list_to_string lst =
-  String.concat "" lst (* Concatenates the list with no separator *)
+  String.concat "" lst 
 
 (**[insert_all world_list tree ]*)
 let rec insert_all word_list tree =
@@ -46,44 +48,20 @@ let rec insert_all word_list tree =
       let new_tree = Tr.insert (Tr.to_char_list h) tree in
       insert_all t new_tree
 
-(*test tree I am using for the prototype*)
-let tree =
-  insert_all
-    [
-      "apple";
-      "aprle";
-      "appol";
-      "appla";
-      "apole";
-      "bapple";
-      "barple";
-      "triangle";
-    ]
-    Tr.empty
-
 (**[string_to_char_list str] is the char list form a string*)
 let string_to_char_list str = List.of_seq (String.to_seq str)
 
 (**[blend_color alpha bg fg] blends together color bg and fg according to alpha*)
 let blend_color alpha bg fg =
   let r1 = (bg lsr 16) land 0xFF in
-  (* Extract red component from bg *)
   let g1 = (bg lsr 8) land 0xFF in
-  (* Extract green component from bg *)
   let b1 = bg land 0xFF in
-
-  (* Extract blue component from bg *)
   let r2 = (fg lsr 16) land 0xFF in
-  (* Extract red component from fg *)
   let g2 = (fg lsr 8) land 0xFF in
-  (* Extract green component from fg *)
   let b2 = fg land 0xFF in
-
-  (* Extract blue component from fg *)
   let blend a c1 c2 =
     int_of_float ((a *. float c2) +. ((1. -. a) *. float c1))
   in
-
   rgb (blend alpha r1 r2) (blend alpha g1 g2) (blend alpha b1 b2)
 
 (**[center_pad width height] creates the notepad in the center with size dimensions as inputted *)
@@ -96,7 +74,6 @@ let center_pad width height =
 (**[no_suggest] clears the suggestions on the GUI*)
 let no_suggest x_off y_off =
   set_color (rgb 229 228 226);
-  (* Pure white color *)
   fill_rect 569 
     (y_off - 250) 
     ((1920 - 340) / 2) 
@@ -140,7 +117,7 @@ let find_chosen_suggestion lst =
       (fun (option, index) ->
         let option_y = menu_y + (index * 40) in
         if is_inside (click_x, click_y) (menu_x, option_y) width 40 then
-          Some option (* Return the clicked option *)
+          Some option 
         else None)
       (List.mapi (fun i option -> (option, i)) lst)
   else None
@@ -267,7 +244,7 @@ let draw_buttons () =
   set_color (rgb 240 70 58);
   fill_rect 300 300 100 50;
   set_color black;
-  draw_string "Button 3"
+  draw_string "Press Me"
 
 (**[start_text] prompts where the typing will appear*)
 let start_text () =
@@ -281,28 +258,6 @@ let start_text () =
 
 (**[string_to_char_lis s] is the char list of a string*)
 let string_to_char_lis (s : string) : char list = List.of_seq (String.to_seq s)
-
-(**[hashtable_to_string table] is the string of a hash table*)
-let hashtable_to_string table =
-  (* Convert the hashtable to a list of key-value pairs *)
-  let included_keys = ref [] in
-  let pairs =
-    Hashtbl.fold
-      (fun key value acc ->
-        if List.mem key !included_keys then acc
-        else
-          let () = included_keys := key :: !included_keys in
-          (key, value) :: acc)
-      table []
-  in
-  (* Sort the pairs by the key *)
-  let sorted_pairs =
-    List.sort (fun (key1, _) (key2, _) -> compare key1 key2) pairs
-  in
-  String.concat ", "
-    (List.map
-       (fun (key, value) -> Printf.sprintf "%d:%s" key value)
-       sorted_pairs)
 
 (**[hashtable_to_string2 table] is the string of a hashtable*)
 let hashtable_to_string2 table =
@@ -323,6 +278,7 @@ let hashtable_to_string2 table =
     List.map (fun (key, value) -> Printf.sprintf "%s" value) sorted_pairs
   in
   String.concat "" value_strings
+
 (**[save_text_to_file filename text] is saving the text to a file named filename*)
 let save_text_to_file filename text =
   let oc = open_out filename in
@@ -348,18 +304,11 @@ let skip_comments ic =
 (**[load_ppm filename] turns the ppm into a image on screen*)
 let load_ppm filename =
   let ic = open_in filename in
-  (* Read the magic number (P3) *)
   let magic_number = input_line ic in
   if magic_number <> "P3" then failwith "Unsupported PPM format";
   let line = skip_comments ic in
   let width, height = Scanf.sscanf line "%d %d" (fun w h -> (w, h)) in
-
-  (* Read the max color value (usually 255) *)
   let _ = input_line ic in
-
-  (* We can ignore it *)
-
-  (* Read all pixel data *)
   let pixel_data = ref [] in
   try
     while true do
@@ -368,13 +317,9 @@ let load_ppm filename =
     done
   with End_of_file ->
     ();
-
-    (* Check if we have enough values *)
     let total_pixels = width * height * 3 in
     if List.length !pixel_data < total_pixels then
       failwith "Not enough pixel values in the file";
-
-    (* Read pixel data and plot each pixel *)
     let rec read_pixel index =
       if index >= total_pixels then ()
       else
@@ -390,6 +335,7 @@ let load_ppm filename =
     read_pixel 0;
 
     close_in ic
+
 (**overflow_rectangle is a rectangle that covers up the overflow of the autocomplete*)
 let overflow_rectangle () =
   set_color white;
@@ -433,32 +379,64 @@ let read_file filename =
 let load_file text =
   set_color black;
   let rec aux x y i word_i accum accum_sent =
-    if i = String.length text - 1 then (x, y, accum, accum_sent)
+    if i = String.length text - 1 then (x, y)
     else begin
-      let c = String.sub text i 1 in
+      let c = String.get text i in
       if x >= 1360 then begin
         Hashtbl.add accum_sent i c;
         moveto 569 (y + 5);
-        draw_string c;
-        if c = " " then begin
-          aux 569 (y + 5) (i + 1) 0 "" accum_sent
+        draw_char c;
+        if c = ' ' then begin
+          let () = Hashtbl.clear accum in
+          aux 569 (y + 5) (i + 1) 0 accum accum_sent
         end
         else
-          aux 569 (y + 5) (i + 1) (word_i + 1) (accum ^ c) accum_sent
+          let () = Hashtbl.add accum word_i c in
+          aux 569 (y + 5) (i + 1) (word_i + 1) accum accum_sent
       end
       else begin
         Hashtbl.add accum_sent i c;
         moveto (x + 5) y;
-        draw_string c;
-        if c = " " then begin
-          aux (x + 6) y (i + 1) 0 "" accum_sent
+        draw_char c;
+        if c = ' ' then begin
+          Hashtbl.clear accum;
+          aux (x + 6) y (i + 1) 0 accum accum_sent
         end
         else
-          aux (x + 6) y (i + 1) (word_i + 1) (accum ^ c) accum_sent
+          let () = Hashtbl.add accum word_i c in
+          aux (x + 6) y (i + 1) (word_i + 1) accum accum_sent
       end
     end
   in
-  aux 580 855 0 0 "" (Hashtbl.create 5)
+  aux 580 855 0 0 (Hashtbl.create 5) (Hashtbl.create 5)
+
+(**draws text on screen for retrieve*)
+let draw_str text x_int y_int max_x_bound line_height =
+  let x = ref x_int in
+  let y = ref y_int in
+  set_color black;
+  let seq = String.to_seq text in  
+  Seq.iter (fun char -> 
+    let count, y_offset =
+      if !x >= max_x_bound then
+        begin
+          y := !y - line_height;
+          x := 580;
+        (580, !y) 
+        end 
+      else begin
+        x := !x + 7;
+        (!x, !y)
+      end       
+    in
+    moveto count y_offset;        
+    draw_char char;                
+  ) seq;
+  (!x, !y)
+
+let first_element (seq : int Seq.t) =
+  let c = Seq.take 1 seq in
+  Seq.fold_left (fun acc elem -> elem + acc) 0 c
 
 (**after_tab_pos is a reference for the tab position*)
 let after_tab_pos = ref 0
@@ -573,12 +551,13 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       else save_text_to_file "data/output.txt" "";
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         accum_sentence word_index sent last_sent_suggest 0 tree)
-    else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
+    else if is_inside (click_x, click_y) (300, 500) 100 50 
     then
       let text = read_file "data/output.txt" in
-      let new_x, new_y, new_accum, new_accum_sent = load_file text in
-      print_to_screen_sentence new_accum new_x new_y counter new_x new_accum_sent
-        accum_sentence (String.length text) sent last_sent_suggest 0 tree
+      let new_x, new_y = 
+      draw_str text x_int y_int max_x_bound line_height in
+        print_to_screen_sentence accum new_x new_y counter x_off_word accum_sent
+        accum_sentence word_index sent last_sent_suggest 0 tree
     else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then begin
       animate_jelly 2.;
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
@@ -611,8 +590,16 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       close_graph ();
       exit 0
     end
+    else if c = '\x13' then begin
+      let str = hashtable_to_string2 accum_sent in
+      if String.length str > 0 then
+        save_text_to_file "data/output.txt"
+          (String.sub str 0 (String.length str - 1))
+      else save_text_to_file "data/output.txt" ""
+    end
     else if c = '\t' then begin
       if
+        (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
         Hashtbl.find accum_sent word_index <> " "
         && String.length accum > 0
         && tab_before = 0
@@ -634,9 +621,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       end
       else begin
         set_color (rgb 229 228 226);
-        (* Fill the rectangle with white to clear it *)
         fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
-        if Hashtbl.find accum_sent word_index = " " then (
+        if (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
+          Hashtbl.find accum_sent word_index = " " then (
           let old_suggest = last_sent_suggest in
           x_int_from_tab :=
             first_tup
@@ -701,7 +688,8 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
           accum_sentence word_index sent "" 0 tree
       else begin
-        if Hashtbl.find accum_sent word_index = " " then begin
+        if (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
+          Hashtbl.find accum_sent word_index = " " then begin
           set_color (rgb 229 228 226);
           fill_rect (x_int + 5) y_int
             (max_x_bound + 56 - x_int - 5)
@@ -725,20 +713,18 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       let rest_of_word = autofill accum old_suggestions in
       print_autofill rest_of_word x_int y_int (rgb 229 228 226)
     else ();
-    (* Add word to accum_sent if it is complete.*)
     if c <> '\x08' && c <> '\027' then
       Hashtbl.add accum_sent (word_index + 1) (String.make 1 c)
     else ();
-    (* Append the character to the accumulator if it's not a space *)
+
     let new_sent =
       if c = '.' || c = '!' || c = '?' then "" else sent ^ String.make 1 c
     in
     let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
     if String.length new_accum == 1 then begin
       overflow_rectangle ();
-      (**HERE IS WHERE IT BREAKS*)
       set_color (rgb 229 228 226);
-      fill_rect (x_int + 6) y_int (max_x_bound + 56 - x_int) (line_height - 3)
+      fill_rect (x_int + 6) y_int (max_x_bound + 53 - x_int) (line_height - 3)
     end;
     (* autofill stuff begin*)
     let suggestions =
@@ -747,7 +733,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     if c = ' ' || tab_before = 1 then
       if x_int > max_x_bound - 190 then no_suggest (max_x_bound - 190) y_int
       else if x_int - 50 < min_x_bound then no_suggest (min_x_bound + 8) y_int
-      else no_suggest (x_int - 50) y_int (* HERE*)
+      else no_suggest (x_int - 50) y_int 
     else begin
       if !tab_reference = 1 then begin
         let new_x_off = x_off_word + (6 * String.length !sent_comp) in
@@ -767,9 +753,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       (* set_color (rgb 0 0 224); *)
       set_color (rgb 229 228 226);
       fill_rect
-        (max_x_bound - 190) (* Same X-offset as print_suggestions1 *)
-        (y_int - 230) (* Ensure it covers the max vertical space *)
-        250 (* Width matching print_suggestions1 *)
+        (max_x_bound - 190) 
+        (y_int - 230) 
+        250 
         240);
 
     set_color black;
@@ -778,7 +764,6 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       if !backspace_pos_use >= max_x_bound then (580, y_int - line_height)
       else (!backspace_pos_use + 7, y_int)
     in
-    (* Display the current typed characters *)
     set_color black;
     moveto count y_offset;
     if String.length new_accum > 0 then
@@ -813,7 +798,7 @@ let print_to_screen_sentence_1 accum x_int y_int counter x_off_word accum_sent
 (**[safe_exit ] exits the GUI safely*)
 let safe_exit () =
   ();
-  exit 0 (* Exit the program cleanly *)
+  exit 0 
 
 (**This launches the GUI and the operations it can do.*)
 let () =
@@ -828,7 +813,6 @@ let () =
     print_to_screen_sentence_1 "" 580 855 120 580 (Hashtbl.create 5) (Hashtbl.create 5) 0 "" "" 0 
   with
   | Graphics.Graphic_failure _ ->
-      (* Catch the fatal I/O error and exit cleanly *)
       safe_exit ()
   | Sys_error msg -> Printf.printf "Error: %s\n" msg
   | Failure msg -> Printf.printf "Error: %s\n" msg

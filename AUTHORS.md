@@ -3,10 +3,12 @@ Authors: Kathy Chen (kc994), Cici Zhou (mz546), Sabrina Liu (sl2222), Xueqing Ts
 
 (11/24/24)
 Used ChatGPT4 to help me understand and write the loading of the ppm images. 
-ChatGPT4 helped debug the overlapping words and rectangles and helped me understand how printing text worked.
+ChatGPT4 helped debug the overlapping words and rectangles and helped me understand how printing text worked. And
+it helped me figure out the concepts behind turning a hashtable into a string.
 Used prompts like "How does ppm image loading work in general in Ocaml" "why are the words overlapping could is it the indexing issue?" 
 
 I used prompts like 
+"What kind of built in method is good for iterating through a hashtable? What does that look like in a example?"
 "How do ppm files work in ocaml graphics?"
 "Why is this function not reading the ppm file and displaying the image? What does this error message mean?"
 "How to display images in ocaml graphics in general?"
@@ -14,7 +16,8 @@ I used prompts like
 Used ChatGPT4 to debug the print_to_screen functions and figure out why text wasn't appearing
 Used ChatGPT4 to understand the concept of event keys and how to use them in conditionals.
 Used ChatGPT4 to help write hasht able to string functions
-ChatGPT4 helped me understand the concepts behind graphics animation and Unix.sleep
+ChatGPT4 helped me understand the concepts behind graphics animation and Unix.sleep. 
+It also helped me understand String.sub and how it works and how it can be useful in functions with string manipulation.
 
 I used prompts like
 "How does a image loop work with Unix sleep to create animations in general? Is this possible?"
@@ -27,6 +30,7 @@ Used ChatGPT4 to help write the filtering out of weird characters functions.
 Used prompts like:
 "How to identify if a character is not a weird character? Like not ASC11 character?"
 "Can I use sequences to filter through a string to remove characters? How do sequences work in general?"
+"How does String.sub work? Would it be useful in this context?"
 
 (11/28/24)
 Used ChatGPT4 for inspiration in debugging [insert], [search], and [remove] functions when the functions were not
