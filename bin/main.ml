@@ -566,6 +566,14 @@ let after_backspace_pos = ref 0
 let just_backspace_ref = ref 0
 let backspace_pos_use = ref 0
 
+(**[get_last_char_strin s] gets the last character of a string as a string*)
+let get_last_char_strin s =
+  let l = String.length s in
+  if l > 0 then
+    String.sub s (l - 1) 1  
+  else
+    ""
+
 (**[print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     accum_sentence word_index sent last_sent_suggest tab_before tree] is the function responsiuble for updating the GUI and 
     running all the button, autofill, typing funcitonality.*)
@@ -590,7 +598,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       if String.length str > 0 then
         let () =
           save_text_to_file "data/output.txt"
-            (String.sub str 0 (String.length str - 1))
+            (String.sub str 0 (String.length str ))
         in
         print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
           accum_sentence word_index sent last_sent_suggest 0 tree
@@ -652,10 +660,13 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       then begin
         if List.length old_suggestions > 0 then (
           let rest_of_word = autofill accum old_suggestions in
+          insert_string_to_hash rest_of_word (word_index+1) accum_sent;
+          insert_string_to_hash (get_last_char_strin rest_of_word) (word_index + 1 +String.length(rest_of_word )-1) accum_sent; 
+          insert_string_to_hash (" ") (word_index + 1 +String.length(rest_of_word )) accum_sent; 
           print_autofill rest_of_word x_int y_int black;
           let count = x_int + (7 * String.length rest_of_word)+ 5 in
           print_to_screen_sentence "" count y_int (count + 4) count
-            accum_sent accum_sentence word_index sent last_sent_suggest 1 tree)
+            accum_sent accum_sentence (word_index + 1 +String.length(rest_of_word )+1) sent last_sent_suggest 1 tree)
         else ()
       end
       else if tab_before = 1 then begin
@@ -767,11 +778,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     in
     let new_accum = if c = ' ' then "" else accum ^ String.make 1 c in
     if String.length new_accum == 1 then begin
-      (* Set color to white to clear the rectangle *)
       overflow_rectangle ();
       (**HERE IS WHERE IT BREAKS*)
       set_color (rgb 229 228 226);
-      (* Fill the rectangle with white to clear it *)
       fill_rect (x_int + 6) y_int (max_x_bound + 56 - x_int) (line_height - 3)
     end;
     (* autofill stuff begin*)
