@@ -401,10 +401,40 @@ module NGramTester (C : module type of NgramColl) = struct
     let top_suggestion = C.get_top_suggestion coll str in
     assert_equal exp top_suggestion ~printer:(fun x -> x)
 
+  let print_grp_list lst =
+    let group_to_string (occ, words) =
+      Printf.sprintf "%d, [%s]" occ (String.concat ", " words)
+    in
+    String.concat "\n" (List.map group_to_string lst)
+
+  let sort_grp_list lst =
+    let sorted_words =
+      List.map
+        (fun (s_occ, words) -> (s_occ, List.sort String.compare words))
+        lst
+    in
+    List.sort (fun (p1, _) (p2, _) -> compare p1 p2) sorted_words
+
+  let group_by_occ lst coll str =
+    List.fold_left
+      (fun acc word ->
+        let s_occ = C.get_s_occ coll str word in
+        let group =
+          match List.assoc_opt s_occ acc with
+          | Some g -> g
+          | None -> []
+        in
+        let acc_other = List.remove_assoc s_occ acc in
+        (s_occ, word :: group) :: acc_other)
+      [] lst
+
   let make_suggestion_test exp coll str =
     "" >:: fun _ ->
     let suggestion = C.get_suggestion coll str in
-    assert_equal exp suggestion ~printer:print_str_list
+    let suggestion_grp = group_by_occ suggestion coll str in
+    let exp_sorted = sort_grp_list exp in
+    let suggestion_grp_sorted = sort_grp_list suggestion_grp in
+    assert_equal exp_sorted suggestion_grp_sorted ~printer:print_grp_list
 
   let make_occ_test exp coll str =
     "" >:: fun _ -> assert_equal exp (C.get_occ coll str) ~printer:string_of_int
@@ -453,23 +483,26 @@ module NGramTester (C : module type of NgramColl) = struct
 
   let wood_suggestion =
     [
-      "engraving";
-      "pigeon";
-      "warbler";
-      "vinegar";
-      "sugar";
-      "spirit";
-      "sorrel";
-      "pulp";
-      "pitch";
-      "nymph";
-      "mouse";
-      "meadow";
-      "duck";
-      "coal";
-      "block";
-      "anemone";
-      "alcohol";
+      (3, [ "engraving" ]);
+      (2, [ "pigeon" ]);
+      ( 1,
+        [
+          "warbler";
+          "vinegar";
+          "sugar";
+          "spirit";
+          "sorrel";
+          "pulp";
+          "pitch";
+          "nymph";
+          "mouse";
+          "meadow";
+          "duck";
+          "coal";
+          "block";
+          "anemone";
+          "alcohol";
+        ] );
     ]
 
   let make_ngram_test =
@@ -984,7 +1017,7 @@ let test_suite =
            TrieTest.make_tree_tests;
            TrieTest.make_pqueue_tests;
            TrieTest.make_to_string_tests;
-           (* NGramTest.make_ngram_test; *)
+           NGramTest.make_ngram_test;
            RBTreeTest.make_rbtree_mem_test;
            RBTreeTest.make_rb_tree_insert_remove_test;
            DictTest.make_dict_test;

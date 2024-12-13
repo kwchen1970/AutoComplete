@@ -8,7 +8,7 @@ let gpt2_url =
 (* let llama3_2_url =
    "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B" *)
 
-let api_key = "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"
+let api_key = "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"
 
 let headers =
   Cohttp.Header.of_list
@@ -55,7 +55,6 @@ let extract_generated org_text gen_text =
 (** [complete_sentence prompt] is the auto-completed sentence following
     [prompt]. *)
 let complete_sentence prompt =
-  print_endline ("Input to complete_sentence: " ^ prompt);
   let%lwt res_json = post_request gpt2_url prompt in
   match res_json with
   | `Assoc [ ("generated_text", `String result) ] ->
