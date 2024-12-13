@@ -861,11 +861,121 @@ module DictTester (D : module type of Dict) = struct
     ]
 end
 
-module TrieTest = TrieTester (Trie)
+module InferenceTester (Inf : module type of Inference) = struct
+  let rng n () = Random.int n
 
-(* module NGramTest = NGramTester (NgramColl) *)
+  let make_rdm_extract_gen_test text =
+    let idemp = Inf.extract_generated text text = "" in
+    if String.length text = 0 || String.length text = 1 then idemp
+    else
+      let i = rng (String.length text - 1) () in
+      let org_text = String.sub text 0 i in
+      let extracted = String.sub text i (String.length text - i) in
+      let general_gen = Inf.extract_generated org_text text = extracted in
+      let no_match =
+        let edited_org = "¿" ^ org_text in
+        let edited_text = "¿" ^ text in
+        Inf.extract_generated edited_org text = text
+        && Inf.extract_generated org_text edited_text = edited_text
+      in
+      let empty_org = Inf.extract_generated "" text = text in
+      let empty_res = Inf.extract_generated text "" = "" in
+      idemp && general_gen && no_match && empty_org && empty_res
+
+  let make_rm_leading_space_test text =
+    let space = Str.regexp "[ \n\r\x0c\t]+" in
+    let res = Inf.rm_leading_space text in
+    let no_leading_space = not (Str.string_match space res 0) in
+    let length_ok = String.length res <= String.length text in
+    let start_i =
+      try Str.search_forward (Str.regexp_string res) text 0
+      with Not_found -> -1
+    in
+    if start_i = -1 then false
+    else
+      let space_removed =
+        if start_i = 0 then true
+        else
+          let leading = String.sub text 0 start_i in
+          Str.search_forward space leading 0 = String.length leading - 1
+      in
+      let is_substring =
+        if res = "" && String.length text - 1 = start_i then true
+        else
+          let trimmed =
+            String.sub text start_i (String.length text - start_i)
+          in
+          trimmed = res
+      in
+      let spec_ok =
+        no_leading_space && length_ok && space_removed && is_substring
+      in
+      if not spec_ok then
+        Printf.printf "Input and trimmed word: '%s', '%s'\n" text res;
+      spec_ok
+
+  let make_rdm_extract_first_word_test text =
+    if String.length text = 0 then true
+    else
+      let space = Str.regexp "[ \n\r\x0c\t]+" in
+      let res = Inf.extract_first_word text in
+      let res_end_i = String.length res in
+      let length_ok = res_end_i <= String.length text in
+      let trimmed = Inf.rm_leading_space text in
+      let is_first = res = Inf.extract_first_word trimmed in
+      let no_space = Str.global_replace space "" res = res in
+      let followed_by_space =
+        if res_end_i = String.length trimmed then true
+        else
+          let next_char = trimmed.[res_end_i] in
+          match next_char with
+          | ' ' | '\n' | '\r' | '\x0c' | '\t' -> true
+          | _ -> false
+      in
+      let spec_ok = length_ok && is_first && followed_by_space && no_space in
+      if not spec_ok then (
+        Printf.printf "Input and extracted word: %s, %s\n" text res;
+        spec_ok)
+      else spec_ok
+
+  let gen_string = QCheck2.Gen.string_printable
+
+  let rdm_extract_gen_text_tests =
+    Random.self_init ();
+    QCheck2.Test.make ~count:1000
+      ~name:"random test for extracting generated text"
+      ~print:(fun str ->
+        Printf.sprintf "extract_generated test, input string: %s" str)
+      gen_string
+      (fun str -> make_rdm_extract_gen_test str)
+
+  let rm_leading_space_tests =
+    QCheck2.Test.make ~count:1000 ~name:"test for removing leading space"
+      ~print:(fun str ->
+        Printf.sprintf "rm_leading_space test, input string: %s" str)
+      gen_string
+      (fun str -> make_rm_leading_space_test str)
+
+  let rdm_extract_first_word_tests =
+    QCheck2.Test.make ~count:1000 ~name:"random test for extracting first word"
+      ~print:(fun str ->
+        Printf.sprintf "extract_first_word test, input string: %s" str)
+      gen_string
+      (fun str -> make_rdm_extract_first_word_test str)
+
+  let make_inference_test =
+    [
+      QCheck_runner.to_ounit2_test rdm_extract_gen_text_tests;
+      QCheck_runner.to_ounit2_test rm_leading_space_tests;
+      QCheck_runner.to_ounit2_test rdm_extract_first_word_tests;
+    ]
+end
+
+module TrieTest = TrieTester (Trie)
+module NGramTest = NGramTester (NgramColl)
 module RBTreeTest = RBTreeTester (Rbtree)
 module DictTest = DictTester (Dict)
+module InfTest = InferenceTester (Inference)
 
 let test_suite =
   "test suite"
@@ -878,6 +988,7 @@ let test_suite =
            RBTreeTest.make_rbtree_mem_test;
            RBTreeTest.make_rb_tree_insert_remove_test;
            DictTest.make_dict_test;
+           InfTest.make_inference_test;
          ]
 
 let _ = run_test_tt_main test_suite

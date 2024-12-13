@@ -34,6 +34,7 @@ let payload prompt =
             ("seed", `Int (Random.int 10000));
           ] );
     ]
+[@@coverage off]
 
 let post_request api_url prompt =
   let body = Yojson.Basic.to_string (payload prompt) in
@@ -43,6 +44,7 @@ let post_request api_url prompt =
   in
   let%lwt body_str = Cohttp_lwt.Body.to_string body in
   Lwt.return (Yojson.Basic.from_string body_str)
+[@@coverage off]
 
 let extract_generated org_text gen_text =
   if String.starts_with ~prefix:org_text gen_text then
@@ -66,17 +68,22 @@ let complete_sentence prompt =
       print_endline
         ("Unexpected response: " ^ Yojson.Basic.pretty_to_string res_json);
       Lwt.return ""
+[@@coverage off]
+
+let rm_leading_space text =
+  let space = Str.regexp "[ \n\r\x0c\t]+" in
+  if Str.string_match space text 0 then
+    let start_i = Str.match_end () in
+    String.sub text start_i (String.length text - start_i)
+  else text
 
 let extract_first_word text =
+  let trimmed = rm_leading_space text in
   try
     let space = Str.regexp "[ \n\r\x0c\t]+" in
-    let end_i = Str.search_forward space text 0 in
-    if end_i = 0 then
-      let next_start = Str.match_end () in
-      let next_end = Str.search_forward space text next_start in
-      String.sub text next_start (next_end - next_start)
-    else String.sub text 0 end_i
-  with Not_found -> text
+    let end_i = Str.search_forward space trimmed 0 in
+    String.sub trimmed 0 end_i
+  with Not_found -> trimmed
 
 (** [complete_next_word prompt] is the auto-completed next word following
     [prompt]. *)
@@ -87,14 +94,4 @@ let complete_next_word prompt =
       let gen_text = extract_generated prompt result in
       Lwt.return (extract_first_word gen_text)
   | _ -> Lwt.return ""
-
-let () =
-  let prompt = Sys.argv.(1) in
-  let handle prompt =
-    let%lwt res = complete_sentence prompt in
-    let%lwt first = complete_next_word prompt in
-    Printf.printf "\nExtracted: \n%s" res;
-    Printf.printf "\nNext word: \n%s\n" first;
-    Lwt.return ()
-  in
-  Lwt_main.run (handle prompt)
+[@@coverage off]
