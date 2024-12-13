@@ -13,6 +13,7 @@ I used prompts like
 
 Used ChatGPT4 to debug the print_to_screen functions and figure out why text wasn't appearing
 Used ChatGPT4 to understand the concept of event keys and how to use them in conditionals.
+Used ChatGPT4 to help write hasht able to string functions
 ChatGPT4 helped me understand the concepts behind graphics animation and Unix.sleep
 
 I used prompts like
