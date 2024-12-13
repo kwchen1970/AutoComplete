@@ -433,64 +433,32 @@ let read_file filename =
 let load_file text =
   set_color black;
   let rec aux x y i word_i accum accum_sent =
-    if i = String.length text - 1 then (x, y)
+    if i = String.length text - 1 then (x, y, accum, accum_sent)
     else begin
-      let c = String.get text i in
+      let c = String.sub text i 1 in
       if x >= 1360 then begin
         Hashtbl.add accum_sent i c;
         moveto 569 (y + 5);
-        draw_char c;
-        if c = ' ' then begin
-          let () = Hashtbl.clear accum in
-          aux 569 (y + 5) (i + 1) 0 accum accum_sent
+        draw_string c;
+        if c = " " then begin
+          aux 569 (y + 5) (i + 1) 0 "" accum_sent
         end
         else
-          let () = Hashtbl.add accum word_i c in
-          aux 569 (y + 5) (i + 1) (word_i + 1) accum accum_sent
+          aux 569 (y + 5) (i + 1) (word_i + 1) (accum ^ c) accum_sent
       end
       else begin
         Hashtbl.add accum_sent i c;
         moveto (x + 5) y;
-        draw_char c;
-        if c = ' ' then begin
-          Hashtbl.clear accum;
-          aux (x + 6) y (i + 1) 0 accum accum_sent
+        draw_string c;
+        if c = " " then begin
+          aux (x + 6) y (i + 1) 0 "" accum_sent
         end
         else
-          let () = Hashtbl.add accum word_i c in
-          aux (x + 6) y (i + 1) (word_i + 1) accum accum_sent
+          aux (x + 6) y (i + 1) (word_i + 1) (accum ^ c) accum_sent
       end
     end
   in
-  aux 580 855 0 0 (Hashtbl.create 5) (Hashtbl.create 5)
-
-(**draws text on screen for retrieve*)
-let draw_str text x_int y_int max_x_bound line_height =
-  let x = ref x_int in
-  let y = ref y_int in
-  set_color black;
-  let seq = String.to_seq text in  
-  Seq.iter (fun char -> 
-    let count, y_offset =
-      if !x >= max_x_bound then
-        begin
-          y := !y - line_height;
-          x := 580;
-        (580, !y) 
-        end 
-      else begin
-        x := !x + 7;
-        (!x, !y)
-      end       
-    in
-    moveto count y_offset;        
-    draw_char char;                
-  ) seq;
-  (!x, !y)
-
-let first_element (seq : int Seq.t) =
-  let c = Seq.take 1 seq in
-  Seq.fold_left (fun acc elem -> elem + acc) 0 c
+  aux 580 855 0 0 "" (Hashtbl.create 5)
 
 (**after_tab_pos is a reference for the tab position*)
 let after_tab_pos = ref 0
@@ -608,10 +576,9 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
     then
       let text = read_file "data/output.txt" in
-      let new_x, new_y = 
-      draw_str text x_int y_int max_x_bound line_height in
-        print_to_screen_sentence accum new_x new_y counter x_off_word accum_sent
-        accum_sentence word_index sent last_sent_suggest 0 tree
+      let new_x, new_y, new_accum, new_accum_sent = load_file text in
+      print_to_screen_sentence new_accum new_x new_y counter new_x new_accum_sent
+        accum_sentence (String.length text) sent last_sent_suggest 0 tree
     else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then begin
       animate_jelly 2.;
       print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
@@ -644,16 +611,8 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
       close_graph ();
       exit 0
     end
-    else if c = '\x13' then begin
-      let str = hashtable_to_string2 accum_sent in
-      if String.length str > 0 then
-        save_text_to_file "data/output.txt"
-          (String.sub str 0 (String.length str - 1))
-      else save_text_to_file "data/output.txt" ""
-    end
     else if c = '\t' then begin
       if
-        (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
         Hashtbl.find accum_sent word_index <> " "
         && String.length accum > 0
         && tab_before = 0
@@ -677,8 +636,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         set_color (rgb 229 228 226);
         (* Fill the rectangle with white to clear it *)
         fill_rect (x_int + 2) y_int (max_x_bound + 56 - x_int) (line_height - 3);
-        if (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
-          Hashtbl.find accum_sent word_index = " " then (
+        if Hashtbl.find accum_sent word_index = " " then (
           let old_suggest = last_sent_suggest in
           x_int_from_tab :=
             first_tup
@@ -743,8 +701,7 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
         print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
           accum_sentence word_index sent "" 0 tree
       else begin
-        if (first_element (Hashtbl.to_seq_keys accum_sent)) > 0 && 
-          Hashtbl.find accum_sent word_index = " " then begin
+        if Hashtbl.find accum_sent word_index = " " then begin
           set_color (rgb 229 228 226);
           fill_rect (x_int + 5) y_int
             (max_x_bound + 56 - x_int - 5)
