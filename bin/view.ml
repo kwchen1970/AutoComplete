@@ -450,27 +450,10 @@ let load_file text =
   let y = ref 855 in
   let rec aux i word_i accum accum_sent =
     if i >= String.length text - 1 then ()
-let string_to_char_table table =
-  let output_ht = Hashtbl.create (Hashtbl.length table) in
-  Hashtbl.iter
-    (fun key value ->
-      match value with
-      | s -> Hashtbl.add output_ht key s.[0])
-    table;
-  output_ht
-
-let load_file text =
-  set_color black;
-  let x = ref 580 in
-  let y = ref 855 in
-  let rec aux i word_i accum accum_sent =
-    if i >= String.length text - 1 then ()
     else begin
       let c = String.get text i in
       if !x >= 1360 then begin
-      if !x >= 1360 then begin
         Hashtbl.add accum_sent i c;
-        moveto 560 (!y + 5);
         moveto 560 (!y + 5);
         draw_char c;
         if c = ' ' then begin
@@ -478,14 +461,8 @@ let load_file text =
           x := 560;
           y := !y + 5;
           aux (i + 1) 0 accum accum_sent
-          x := 560;
-          y := !y + 5;
-          aux (i + 1) 0 accum accum_sent
         end
         else Hashtbl.add accum word_i c;
-        x := 560;
-        y := !y + 5;
-        aux (i + 1) (word_i + 1) accum accum_sent
         x := 560;
         y := !y + 5;
         aux (i + 1) (word_i + 1) accum accum_sent
@@ -493,25 +470,18 @@ let load_file text =
       else begin
         Hashtbl.add accum_sent i c;
         moveto (!x + 5) !y;
-        moveto (!x + 5) !y;
         draw_char c;
         if c = ' ' then begin
           Hashtbl.clear accum;
-          x := !x + 6;
-          aux (i + 1) 0 accum accum_sent
           x := !x + 6;
           aux (i + 1) 0 accum accum_sent
         end
         else Hashtbl.add accum word_i c;
         x := !x + 6;
         aux (i + 1) (word_i + 1) accum accum_sent
-        x := !x + 6;
-        aux (i + 1) (word_i + 1) accum accum_sent
       end
     end
   in
-  aux 0 0 (Hashtbl.create 5) (Hashtbl.create 5);
-  (!x, !y)
   aux 0 0 (Hashtbl.create 5) (Hashtbl.create 5);
   (!x, !y)
 
@@ -550,12 +520,10 @@ let rec print_to_screen accum x_int y_int counter x_off_word accum_sent
     then begin
       print_endline "clicked retrieve";
       let text = read_file "data/output.txt" in
-      let new_x, new_y = load_file text in
+      ignore (load_file text);
       set_color black;
-      print_to_screen "" new_x new_y (String.length text) x_off_word accum_sent
-        accum_sentence word_index
-        (read_file "data/output.txt")
-        tree
+      print_to_screen accum x_int y_int counter x_off_word accum_sent
+        accum_sentence word_index sent tree
     end
     else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
       print_endline "clicked 3rd button"
@@ -764,48 +732,34 @@ let rec print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
     print_endline "button pressed";
     let click_x = event.mouse_x in
     let click_y = event.mouse_y in
-    if is_inside (click_x, click_y) (300, 700) 100 50 then (
-    if is_inside (click_x, click_y) (300, 700) 100 50 then (
-      (* save button *)
-      let () = print_endline "clicked save" in
-      let str = hashtable_to_string2 accum_sent in
-      if String.length str > 0 then
-        let () =
-          save_text_to_file "data/output.txt"
-            (String.sub str 0 (String.length str - 1))
-        in
+    if is_inside (click_x, click_y) (300, 700) 100 50 then
+      if is_inside (click_x, click_y) (300, 700) 100 50 then (
+        (* save button *)
+        let () = print_endline "clicked save" in
+        let str = hashtable_to_string2 accum_sent in
+        if String.length str > 0 then
+          let () =
+            save_text_to_file "data/output.txt"
+              (String.sub str 0 (String.length str - 1))
+          in
+          print_to_screen_sentence accum x_int y_int counter x_off_word
+            accum_sent accum_sentence word_index sent last_sent_suggest 0 tree
+        else save_text_to_file "data/output.txt" "";
+        print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
+          accum_sentence word_index sent last_sent_suggest 0 tree)
+      else if
+        is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
+      then
+        let () = print_endline "clicked retrieve" in
+        let text = read_file "data/output.txt" in
+        let new_x, new_y = load_file text in
+        print_to_screen_sentence accum new_x new_y counter x_off_word accum_sent
+          accum_sentence (String.length text) sent last_sent_suggest 0 tree
+      else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
+        print_endline "clicked button 3"
+      else
         print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
           accum_sentence word_index sent last_sent_suggest 0 tree
-      else save_text_to_file "data/output.txt" "";
-      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-        accum_sentence word_index sent last_sent_suggest 0 tree)
-        let () =
-          save_text_to_file "data/output.txt"
-            (String.sub str 0 (String.length str - 1))
-        in
-        print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-          accum_sentence word_index sent last_sent_suggest 0 tree
-      else save_text_to_file "data/output.txt" "";
-      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-        accum_sentence word_index sent last_sent_suggest 0 tree)
-    else if is_inside (click_x, click_y) (300, 500) 100 50 (* retrieve button *)
-    then
-      let () = print_endline "clicked retrieve" in
-      let text = read_file "data/output.txt" in
-      let new_x, new_y = load_file text in
-      print_to_screen_sentence accum new_x new_y counter x_off_word accum_sent
-        accum_sentence (String.length text) sent last_sent_suggest 0 tree
-    then
-      let () = print_endline "clicked retrieve" in
-      let text = read_file "data/output.txt" in
-      let new_x, new_y = load_file text in
-      print_to_screen_sentence accum new_x new_y counter x_off_word accum_sent
-        accum_sentence (String.length text) sent last_sent_suggest 0 tree
-    else if is_inside (click_x, click_y) (300, 300) 100 50 (* button 3 *) then
-      print_endline "clicked button 3"
-    else
-      print_to_screen_sentence accum x_int y_int counter x_off_word accum_sent
-        accum_sentence word_index sent last_sent_suggest 0 tree
   end
   else begin
     let c = event.key in
