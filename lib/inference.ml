@@ -5,10 +5,7 @@ open Yojson.Basic
 let gpt2_url =
   "https://api-inference.huggingface.co/models/openai-community/gpt2"
 
-(* let llama3_2_url =
-   "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B" *)
-
-let api_key = "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"
+let api_key = (*insert your own Hugging Face user access token*)
 
 let headers =
   Cohttp.Header.of_list
