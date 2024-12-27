@@ -12,7 +12,7 @@ Ivy Zhou
 - Uses red font to provide autocomplete suggestions for words and sentences that the user types.
 - Suggests correct spellings for the word being currently typed.
 - Uses AI through Hugging Face API fetching to suggest how to finish the current sentence everytime the user clicks space.
-- Pressing tab autocompletes the word in black with the top suggested spelling. Pressing tab also autocompletes the suggested rest of the sentence in black.
+- Pressing tab autocompletes the current word in black with the top suggested spelling. Pressing tab autocompletes the rest of the sentence with the current rest of sentence suggestion in black.
 - Repeatedly pressing space can generate more sentence completion suggestions in red.
 - Text can be saved to a txt file by pressing the save button. Progress can be restored to the GUI when reopening the application by clicking the retrieve button.
 - The press me button plays a fun cat animation.
