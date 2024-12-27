@@ -1,9 +1,9 @@
 # AutoComplete
 Team Members: 
-Sabrina Liu 
-Kathleen Chen 
-Xueqing Tsang 
-Cici Zhou 
+Sabrina Liu, 
+Kathleen Chen,
+Xueqing Tsang,
+Cici Zhou, 
 Ivy Zhou 
 ## Demo Video:
 [AutoComplete Demo Video](https://www.youtube.com/watch?v=GLEakwbu01g)
