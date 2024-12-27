@@ -9,10 +9,10 @@ Ivy Zhou
 [AutoComplete Demo Video](https://www.youtube.com/watch?v=GLEakwbu01g)
 
 ## Description: 
-- This project autocompletes words and sentences that the user types
+- This project uses red font to autocomplete words and sentences that the user types
 - The program suggests correct spellings on the word being currently typed.
 - The program uses AI through Hugging Face API fetching to suggest how to finish the current sentence everytime the user clicks space.
-- Pressing tab can autocomplete the word with the top matched spelling and it can also autocomplete the suggested sentence.
+- Pressing tab can autocomplete the word in black with the top matched spelling and it can also autocomplete the suggested sentence in black.
 - Repeatedly pressing space can generate more sentence completion suggestions.
 - Text can be saved to a txt file by pressing the save button and then progress can be restored when reopening the program by clicking the retrieve button.
 - The press me button plays a fun cat animation.
