@@ -1,5 +1,5 @@
 # AutoComplete
-## Team members: 
+Team Members: 
 Sabrina Liu 
 Kathleen Chen 
 Xueqing Tsang 
