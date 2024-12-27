@@ -18,5 +18,8 @@ Ivy Zhou
 - The press me button plays a fun cat animation.
 
 ## Images:
-![image](https://github.com/user-attachments/assets/a8764e93-c25e-458d-9946-8bb3d65a7f0f)
-![image](https://github.com/user-attachments/assets/b3ffc905-505b-470e-a408-e835c4a78853)
+![image](https://github.com/user-attachments/assets/4ba44404-842c-427c-b796-fcc5241ae501)
+![image](https://github.com/user-attachments/assets/dbcf2b36-42fe-429e-8b1a-6004aeaba9a0)
+![image](https://github.com/user-attachments/assets/8cff74c2-d598-44b5-b4b4-bfaaeb130ab0)
+
+
