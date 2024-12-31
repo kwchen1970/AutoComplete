@@ -4,7 +4,8 @@ Sabrina Liu,
 Kathleen Chen,
 Xueqing Tsang,
 Cici Zhou, 
-Ivy Zhou 
+Ivy Zhou < br / >
+other helpful resources used are in the AUTHORS.md file
 ## Demo Video:
 [AutoComplete Demo Video](https://www.youtube.com/watch?v=GLEakwbu01g)
 
